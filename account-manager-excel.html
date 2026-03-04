@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号管理系统 - 支持Excel</title>
+    <!-- SheetJS for Excel support -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', PingFang SC, sans-serif;
+            background: #f5f5f5; 
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #667eea;
+        }
+        .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 8px; }
+        .stat-card .number { font-size: 32px; font-weight: 700; color: #333; }
+        
+        .form-section, .filter-section, .table-section {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: #07C160; color: white; }
+        .btn-warning { background: #FAAD14; color: white; }
+        .btn-danger { background: #FA5151; color: white; }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .filter-input {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        tr:hover { background: #f8f9fa; }
+        
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .tag-platform { background: #e3f2fd; color: #1976d2; }
+        .tag-country { background: #f3e5f5; color: #7b1fa2; }
+        
+        .action-btns button {
+            padding: 6px 12px;
+            margin-right: 4px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .btn-edit { background: #2196F3; color: white; }
+        .btn-delete { background: #f44336; color: white; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .file-upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+        .file-upload-area.dragover {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+        
+        .template-info {
+            background: #e3f2fd;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .template-info h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+        .template-info code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .preview-table {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: #333;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 2000;
+        }
+        .toast.show { display: block; }
+        .toast.success { background: #07C160; }
+        .toast.error { background: #FA5151; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 账号管理系统</h1>
+            <p>支持 Excel 导入导出、数据筛选、本地存储</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>总账号数</h3>
+                <div class="number" id="totalCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>平台数</h3>
+                <div class="number" id="platformCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>国家/地区</h3>
+                <div class="number" id="countryCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>总好友数</h3>
+                <div class="number" id="totalFriends">0</div>
+            </div>
+        </div>
+        
+        <!-- 添加/编辑表单 -->
+        <div class="form-section">
+            <h2>📝 <span id="formTitle">添加新账号</span></h2>
+            <form id="accountForm">
+                <input type="hidden" id="editId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>平台 *</label>
+                        <select id="platform" required>
+                            <option value="">选择平台</option>
+                            <option value="微信">微信</option>
+                            <option value="抖音">抖音</option>
+                            <option value="小红书">小红书</option>
+                            <option value="微博">微博</option>
+                            <option value="Twitter">Twitter</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="TikTok">TikTok</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>账号/用户名 *</label>
+                        <input type="text" id="username" placeholder="输入账号" required>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="password" placeholder="输入密码">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" id="email" placeholder="example@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>国家/地区</label>
+                        <select id="country">
+                            <option value="">选择国家</option>
+                            <option value="中国">中国</option>
+                            <option value="美国">美国</option>
+                            <option value="日本">日本</option>
+                            <option value="韩国">韩国</option>
+                            <option value="英国">英国</option>
+                            <option value="德国">德国</option>
+                            <option value="法国">法国</option>
+                            <option value="加拿大">加拿大</option>
+                            <option value="澳大利亚">澳大利亚</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>帖子数</label>
+                        <input type="number" id="posts" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>好友数量</label>
+                        <input type="number" id="friends" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Cookie</label>
+                        <input type="text" id="cookie" placeholder="粘贴Cookie数据">
+                    </div>
+                    <div class="form-group">
+                        <label>双重验证(2FA)</label>
+                        <input type="text" id="twoFactor" placeholder="密钥或验证码">
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <input type="text" id="notes" placeholder="其他信息">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">💾 保存账号</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">重置</button>
+            </form>
+        </div>
+        
+        <!-- 筛选 -->
+        <div class="filter-section">
+            <h3>🔍 数据筛选</h3>
+            <div class="filter-grid">
+                <input type="text" class="filter-input" id="filterPlatform" placeholder="筛选平台...">
+                <input type="text" class="filter-input" id="filterUsername" placeholder="筛选账号...">
+                <input type="text" class="filter-input" id="filterCountry" placeholder="筛选国家...">
+                <input type="text" class="filter-input" id="filterEmail" placeholder="筛选邮箱...">
+            </div>
+            <button class="btn btn-primary" onclick="applyFilter()">应用筛选</button>
+            <button class="btn btn-secondary" onclick="clearFilter()">清除筛选</button>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div style="margin-bottom: 16px;">
+            <button class="btn btn-success" onclick="exportToExcel()">📊 导出Excel</button>
+            <button class="btn btn-success" onclick="exportToJSON()">📄 导出JSON</button>
+            <button class="btn btn-warning" onclick="showImportModal()">📥 导入Excel/JSON</button>
+            <button class="btn btn-secondary" onclick="downloadTemplate()">📋 下载模板</button>
+            <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空所有</button>
+        </div>
+        
+        <!-- 数据表格 -->
+        <div class="table-section">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>平台</th>
+                        <th>账号</th>
+                        <th>邮箱</th>
+                        <th>密码</th>
+                        <th>国家</th>
+                        <th>帖子数</th>
+                        <th>好友</th>
+                        <th>2FA</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 动态生成 -->
+                </tbody>
+            </table>
+            
+            <div id="emptyState" style="text-align: center; padding: 60px; color: #999; display: none;">
+                <div style="font-size: 64px; margin-bottom: 16px;">📭</div>
+                <p>暂无数据，请添加账号或导入Excel</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 导入模态框 -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <h2>📥 导入数据</h2>
+            
+            <div class="template-info">
+                <h4>📋 Excel 格式要求：</h4>
+                <p>表头必须包含（顺序不限）：</p>
+                <p><code>平台</code>、<code>账号</code>、<code>密码</code>、<code>邮箱</code>、<code>国家</code>、<code>帖子数</code>、<code>好友数量</code>、<code>Cookie</code>、<code>双重验证</code>、<code>备注</code></p>
+            </div>
+            
+            <div class="file-upload-area" id="dropZone">
+                <div style="font-size: 48px; margin-bottom: 16px;">📁</div>
+                <p>点击选择文件或拖拽到此处</p>
+                <p style="color: #999; font-size: 14px; margin-top: 8px;">支持 .xlsx, .xls, .json 格式</p>
+                <input type="file" id="importFile" style="display: none" accept=".xlsx,.xls,.json" onchange="handleFileSelect(this)">
+            </div>
+            
+            <div id="importPreview" style="display: none;">
+                <h4>数据预览：</h4>
+                <div class="preview-table">
+                    <table id="previewTable" style="font-size: 12px;">
+                        <thead><tr></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p id="importStats"></p>
+                
+                <div id="duplicateWarning" style="background: #fff3cd; padding: 12px; border-radius: 8px; margin: 16px 0; display: none;">
+                    ⚠️ 检测到重复账号，导入时将自动跳过
+                </div>
+            </div>
+            
+            <div id="importProgress" style="display: none;">
+                <p>导入进度：</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p id="progressText">0%</p>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" id="confirmImportBtn" onclick="confirmImport()" style="display: none;">✅ 确认导入</button>
+                <button class="btn btn-secondary" onclick="closeImportModal()">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 数据存储
+        let accounts = JSON.parse(localStorage.getItem('accountManager_data') || '[]');
+        let filteredAccounts = [...accounts];
+        let pendingImportData = [];
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+            updateStats();
+            setupDragDrop();
+        });
+        
+        // 显示提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // 保存数据
+        function saveData() {
+            localStorage.setItem('accountManager_data', JSON.stringify(accounts));
+        }
+        
+        // 生成ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // 添加/编辑账号
+        document.getElementById('accountForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const editId = document.getElementById('editId').value;
+            const accountData = {
+                platform: document.getElementById('platform').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                email: document.getElementById('email').value,
+                country: document.getElementById('country').value,
+                posts: parseInt(document.getElementById('posts').value) || 0,
+                friends: parseInt(document.getElementById('friends').value) || 0,
+                cookie: document.getElementById('cookie').value,
+                twoFactor: document.getElementById('twoFactor').value,
+                notes: document.getElementById('notes').value,
+                createTime: new Date().toISOString()
+            };
+            
+            if (editId) {
+                const index = accounts.findIndex(a => a.id === editId);
+                if (index !== -1) {
+                    accountData.id = editId;
+                    accountData.createTime = accounts[index].createTime;
+                    accounts[index] = accountData;
+                    showToast('账号更新成功！');
+                }
+            } else {
+                accountData.id = generateId();
+                accounts.push(accountData);
+                showToast('账号添加成功！');
+            }
+            
+            saveData();
+            renderTable();
+            updateStats();
+            resetForm();
+        });
+        
+        // 渲染表格
+        function renderTable(data = filteredAccounts) {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            tbody.innerHTML = data.map(account => `
+                <tr>
+                    <td>${account.id.substr(-6)}</td>
+                    <td><span class="tag tag-platform">${account.platform || '-'}</span></td>
+                    <td>${account.username}</td>
+                    <td>${account.email || '-'}</td>
+                    <td><span class="password-field" onclick="this.textContent=this.dataset.pwd||'[空]';">********</span></td>
+                    <td>${account.country ? `<span class="tag tag-country">${account.country}</span>` : '-'}</td>
+                    <td>${account.posts || 0}</td>
+                    <td>${account.friends || 0}</td>
+                    <td>${account.twoFactor ? '✅' : '❌'}</td>
+                    <td class="action-btns">
+                        <button class="btn-edit" onclick="editAccount('${account.id}')">编辑</button>
+                        <button class="btn-delete" onclick="deleteAccount('${account.id}')">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            data.forEach((account, index) => {
+                const pwdField = tbody.querySelectorAll('.password-field')[index];
+                if (pwdField) pwdField.dataset.pwd = account.password;
+            });
+        }
+        
+        // 更新统计
+        function updateStats() {
+            document.getElementById('totalCount').textContent = accounts.length;
+            const platforms = new Set(accounts.map(a => a.platform).filter(Boolean));
+            document.getElementById('platformCount').textContent = platforms.size;
+            const countries = new Set(accounts.map(a => a.country).filter(Boolean));
+            document.getElementById('countryCount').textContent = countries.size;
+            const totalFriends = accounts.reduce((sum, a) => sum + (parseInt(a.friends) || 0), 0);
+            document.getElementById('totalFriends').textContent = totalFriends.toLocaleString();
+        }
+        
+        // 编辑账号
+        function editAccount(id) {
+            const account = accounts.find(a => a.id === id);
+            if (!account) return;
+            
+            document.getElementById('editId').value = account.id;
+            document.getElementById('platform').value = account.platform;
+            document.getElementById('username').value = account.username;
+            document.getElementById('password').value = account.password;
+            document.getElementById('email').value = account.email || '';
+            document.getElementById('country').value = account.country || '';
+            document.getElementById('posts').value = account.posts || '';
+            document.getElementById('friends').value = account.friends || '';
+            document.getElementById('cookie').value = account.cookie || '';
+            document.getElementById('twoFactor').value = account.twoFactor || '';
+            document.getElementById('notes').value = account.notes || '';
+            
+            document.getElementById('formTitle').textContent = '编辑账号';
+            document.querySelector('.btn-primary').textContent = '💾 更新账号';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // 删除账号
+        function deleteAccount(id) {
+            if (!confirm('确定要删除这个账号吗？')) return;
+            accounts = accounts.filter(a => a.id !== id);
+            saveData();
+            renderTable();
+            updateStats();
+            showToast('删除成功');
+        }
+        
+        // 重置表单
+        function resetForm() {
+            document.getElementById('accountForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('formTitle').textContent = '添加新账号';
+            document.querySelector('.btn-primary').textContent = '💾 保存账号';
+        }
+        
+        // 筛选
+        function applyFilter() {
+            const platform = document.getElementById('filterPlatform').value.toLowerCase();
+            const username = document.getElementById('filterUsername').value.toLowerCase();
+            const country = document.getElementById('filterCountry').value.toLowerCase();
+            const email = document.getElementById('filterEmail').value.toLowerCase();
+            
+            filteredAccounts = accounts.filter(a => {
+                return (!platform || (a.platform || '').toLowerCase().includes(platform)) &&
+                       (!username || (a.username || '').toLowerCase().includes(username)) &&
+                       (!country || (a.country || '').toLowerCase().includes(country)) &&
+                       (!email || (a.email || '').toLowerCase().includes(email));
+            });
+            renderTable(filteredAccounts);
+        }
+        
+        function clearFilter() {
+            document.getElementById('filterPlatform').value = '';
+            document.getElementById('filterUsername').value = '';
+            document.getElementById('filterCountry').value = '';
+            document.getElementById('filterEmail').value = '';
+            filteredAccounts = [...accounts];
+            renderTable();
+        }
+        
+        // ==================== Excel 功能 ====================
+        
+        // 导出 Excel
+        function exportToExcel() {
+            const data = accounts.map(a => ({
+                '平台': a.platform,
+                '账号': a.username,
+                '密码': a.password,
+                '邮箱': a.email,
+                '国家': a.country,
+                '帖子数': a.posts,
+                '好友数量': a.friends,
+                'Cookie': a.cookie,
+                '双重验证': a.twoFactor,
+                '备注': a.notes,
+                '创建时间': new Date(a.createTime).toLocaleString()
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '账号数据');
+            
+            // 设置列宽
+            ws['!cols'] = [
+                {wch: 12}, {wch: 20}, {wch: 20}, {wch: 25},
+                {wch: 10}, {wch: 10}, {wch: 10}, {wch: 30},
+                {wch: 15}, {wch: 20}, {wch: 20}
+            ];
+            
+            XLSX.writeFile(wb, `账号数据_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showToast('Excel 导出成功！');
+        }
+        
+        // 下载模板
+        function downloadTemplate() {
+            const template = [{
+                '平台': '微信',
+                '账号': 'example_user',
+                '密码': 'password123',
+                '邮箱': 'user@example.com',
+                '国家': '中国',
+                '帖子数': 100,
+                '好友数量': 500,
+                'Cookie': 'session_id=xxx;token=yyy',
+                '双重验证': '123456 或密钥',
+                '备注': '备用账号'
+            }];
+            
+            const ws = XLSX.utils.json_to_sheet(template);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '导入模板');
+            XLSX.writeFile(wb, '账号导入模板.xlsx');
+            showToast('模板下载成功！请按模板格式填写数据');
+        }
+        
+        // 显示导入模态框
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('show');
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('confirmImportBtn').style.display = 'none';
+            document.getElementById('importProgress').style.display = 'none';
+            pendingImportData = [];
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('show');
+        }
+        
+        // 拖拽上传设置
+        function setupDragDrop() {
+            const dropZone = document.getElementById('dropZone');
+            
+            dropZone.addEventListener('click', () => {
+                document.getElementById('importFile').click();
+            });
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+        }
+        
+        // 文件选择处理
+        function handleFileSelect(input) {
+            if (input.files.length > 0) {
+                handleFile(input.files[0]);
+            }
+        }
+        
+        // 处理文件
+        function handleFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    if (file.name.endsWith('.json')) {
+                        const data = JSON.parse(e.target.result);
+                        processImportData(Array.isArray(data) ? data : data.accounts || []);
+                    } else if (file.name.match(/\.(xlsx|xls)$/)) {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                        processImportData(jsonData);
+                    } else {
+                        showToast('不支持的文件格式', 'error');
+                    }
+                } catch (err) {
+                    showToast('文件解析失败: ' + err.message, 'error');
+                }
+            };
+            
+            if (file.name.endsWith('.json')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+        
+        // 处理导入数据
+        function processImportData(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                showToast('文件中没有数据', 'error');
+                return;
+            }
+            
+            // 字段映射（支持中文和英文）
+            const fieldMap = {
+                '平台': 'platform', 'platform': 'platform',
+                '账号': 'username', 'username': 'username', 'account': 'username',
+                '密码': 'password', 'password': 'password',
+                '邮箱': 'email', 'email': 'email',
+                '国家': 'country', 'country': 'country', '国家/地区': 'country',
+                '帖子数': 'posts', 'posts': 'posts', '帖子': 'posts',
+                '好友数量': 'friends', 'friends': 'friends', '好友数': 'friends', '好友': 'friends',
+                'Cookie': 'cookie', 'cookie': 'cookie',
+                '双重验证': 'twoFactor', 'twoFactor': 'twoFactor', '2FA': 'twoFactor',
+                '备注': 'notes', 'notes': 'notes', 'note': 'notes'
+            };
+            
+            // 转换数据
+            pendingImportData = data.map(row => {
+                const item = { id: generateId(), createTime: new Date().toISOString() };
+                for (let key in row) {
+                    const mappedKey = fieldMap[key];
+                    if (mappedKey) {
+                        item[mappedKey] = row[key];
+                    }
+                }
+                return item;
+            }).filter(item => item.username); // 必须有账号名
+            
+            // 显示预览
+            showPreview(pendingImportData);
+        }
+        
+        // 显示预览
+        function showPreview(data) {
+            const previewDiv = document.getElementById('importPreview');
+            const table = document.getElementById('previewTable');
+            const confirmBtn = document.getElementById('confirmImportBtn');
+            
+            // 显示前5条
+            const previewData = data.slice(0, 5);
+            
+            if (previewData.length > 0) {
+                const headers = ['平台', '账号', '邮箱', '国家'];
+                table.querySelector('thead tr').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+                
+                table.querySelector('tbody').innerHTML = previewData.map(row => `
+                    <tr>
+                        <td>${row.platform || '-'}</td>
+                        <td>${row.username}</td>
+                        <td>${row.email || '-'}</td>
+                        <td>${row.country || '-'}</td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('importStats').innerHTML = 
+                    `共找到 <strong>${data.length}</strong> 条记录` +
+                    (data.length > 5 ? `（显示前5条）` : '');
+                
+                previewDiv.style.display = 'block';
+                confirmBtn.style.display = 'inline-block';
+                
+                // 检查重复
+                const duplicates = data.filter(newItem => 
+                    accounts.some(existing => 
+                        existing.username === newItem.username && 
+                        existing.platform === newItem.platform
+                    )
+                );
+                
+                document.getElementById('duplicateWarning').style.display = 
+                    duplicates.length > 0 ? 'block' : 'none';
+            }
+        }
+        
+        // 确认导入
+        function confirmImport() {
+            const progressDiv = document.getElementById('importProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressDiv.style.display = 'block';
+            
+            let imported = 0;
+            let skipped = 0;
+            
+            pendingImportData.forEach((item, index) => {
+                setTimeout(() => {
+                    // 检查重复
+                    const exists = accounts.some(a => 
+                        a.username === item.username && a.platform === item.platform
+                    );
+                    
+                    if (!exists) {
+                        accounts.push(item);
+                        imported++;
+                    } else {
+                        skipped++;
+                    }
+                    
+                    // 更新进度
+                    const percent = Math.round(((index + 1) / pendingImportData.length) * 100);
+                    progressFill.style.width = percent + '%';
+                    progressText.textContent = `${percent}% (${index + 1}/${pendingImportData.length})`;
+                    
+                    // 完成
+                    if (index === pendingImportData.length - 1) {
+                        saveData();
+                        renderTable();
+                        updateStats();
+                        setTimeout(() => {
+                            closeImportModal();
+                            showToast(`导入完成！成功: ${imported}, 跳过: ${skipped}`);
+                        }, 500);
+                    }
+                }, index * 50);
+            });
+        }
+        
+        // 导出 JSON
+        function exportToJSON() {
+            const dataStr = JSON.stringify({
+                exportTime: new Date().toISOString(),
+                total: accounts.length,
+                accounts: accounts
+            }, null, 2);
+            
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `账号备份_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            showToast('JSON 导出成功！');
+        }
+        
+        // 清空数据
+        function clearAllData() {
+            if (!confirm('⚠️ 确定要清空所有账号数据吗？此操作不可恢复！')) return;
+            if (!confirm('再次确认：你真的要删除所有数据吗？')) return;
+            
+            accounts = [];
+            filteredAccounts = [];
+            saveData();
+            renderTable();
+            updateStats();
+            showToast('所有数据已清空');
+        }
+        
+        // 点击模态框外部关闭
+        document.getElementById('importModal').addEventListener('click', (e) => {
+            if (e.target.id === 'importModal') closeImportModal();
+        });
+    </script>
+</body>
+</html>
