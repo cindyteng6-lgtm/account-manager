@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号管理系统 Pro - 多库存管理</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', PingFang SC, sans-serif;
+      background: #f5f5f5; 
+      padding: 20px;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    
+    .header { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+    }
+    .header h1 { font-size: 28px; margin-bottom: 8px; }
+    
+    /* 库存切换标签 */
+    .inventory-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .tab-btn {
+      padding: 12px 24px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-btn:hover { border-color: #667eea; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: transparent;
+    }
+    .tab-btn .count {
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .tab-btn.active .count { background: rgba(255,255,255,0.3); }
+    
+    /* 统计卡片 */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-left: 4px solid;
+    }
+    .stat-card.active { border-left-color: #07C160; }
+    .stat-card.dead { border-left-color: #FA5151; }
+    .stat-card.sold { border-left-color: #FAAD14; }
+    .stat-card.total { border-left-color: #667eea; }
+    .stat-card.backup { border-left-color: #1890ff; }
+    .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 8px; }
+    .stat-card .number { font-size: 32px; font-weight: 700; color: #333; }
+    
+    /* 操作栏 */
+    .action-bar {
+      background: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-success { background: #07C160; color: white; }
+    .btn-warning { background: #FAAD14; color: white; }
+    .btn-danger { background: #FA5151; color: white; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-info { background: #1890ff; color: white; }
+    .btn-purple { background: #722ed1; color: white; }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    /* 筛选区 */
+    .filter-section {
+      background: white;
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .filter-input {
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    /* 表格 */
+    .table-section {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 1200px;
+    }
+    th, td {
+      padding: 12px 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      white-space: nowrap;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #555;
+      position: sticky;
+      top: 0;
+    }
+    tr:hover { background: #f8f9fa; }
+    
+    /* 标签 */
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .tag-platform { background: #e3f2fd; color: #1976d2; }
+    .tag-country { background: #f3e5f5; color: #7b1fa2; }
+    .tag-status-active { background: #d4edda; color: #155724; }
+    .tag-status-dead { background: #f8d7da; color: #721c24; }
+    .tag-status-sold { background: #fff3cd; color: #856404; }
+    .tag-unlock { background: #e8f5e9; color: #2e7d32; font-size: 11px; }
+    
+    /* 操作按钮 */
+    .action-btns {
+      display: flex;
+      gap: 4px;
+      flex-wrap: nowrap;
+    }
+    .action-btns button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-edit { background: #2196F3; color: white; }
+    .btn-delete { background: #f44336; color: white; }
+    .btn-move { background: #ff9800; color: white; }
+    .btn-check { background: #4caf50; color: white; }
+    
+    /* 表单模态框 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 900px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      margin: 20px auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .modal-header h2 { font-size: 20px; }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+    
+    /* 表单布局 */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: #555;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    /* 文件上传 */
+    .file-upload-area {
+      border: 2px dashed #ddd;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    .file-upload-area:hover {
+      border-color: #667eea;
+      background: #f8f9fa;
+    }
+    
+    /* 检测结果 */
+    .check-result {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .check-alive { background: #d4edda; color: #155724; }
+    .check-dead { background: #f8d7da; color: #721c24; }
+    .check-pending { background: #e2e3e5; color: #383d41; }
+    
+    /* 重复警告 */
+    .duplicate-warning, .validation-errors {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .duplicate-warning.show, .validation-errors.show { display: block; }
+    .validation-errors { background: #f8d7da; border-color: #f5c6cb; }
+    
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      background: #333;
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+      z-index: 2000;
+    }
+    .toast.show { display: block; }
+    .toast.success { background: #07C160; }
+    .toast.error { background: #FA5151; }
+    .toast.warning { background: #FAAD14; }
+    .toast.info { background: #1890ff; }
+    
+    /* 进度条 */
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background: #f0f0f0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s;
+    }
+    
+    /* 链接输入 */
+    .link-input-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .link-input-group input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    
+    /* 复选框 */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+    .empty-state-icon { font-size: 64px; margin-bottom: 16px; }
+    
+    /* 选中行 */
+    tr.selected { background: #e3f2fd !important; }
+    
+    /* 批量操作栏 */
+    .batch-actions {
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+    .batch-actions.show { display: flex; }
+
+    /* 备份记录 */
+    .backup-record {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .backup-record:hover { background: #e9ecef; }
+    .backup-info { flex: 1; }
+    .backup-date { font-weight: 600; color: #333; }
+    .backup-size { color: #666; font-size: 12px; }
+    .backup-actions { display: flex; gap: 8px; }
+
+    /* 自动备份状态 */
+    .auto-backup-status {
+      background: #e8f5e9;
+      border: 1px solid #4caf50;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .auto-backup-status.disabled {
+      background: #ffebee;
+      border-color: #f44336;
+    }
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #4caf50;
+      animation: pulse 2s infinite;
+    }
+    .auto-backup-status.disabled .status-dot {
+      background: #f44336;
+      animation: none;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 账号管理系统 Pro</h1>
+      <p>支持多库存管理、存活检测、重复检测、Excel导入导出、自动备份</p>
+    </div>
+    
+    <!-- 库存切换标签 -->
+    <div class="inventory-tabs">
+      <button class="tab-btn active" data-inventory="active" onclick="switchInventory('active')">
+        🟢 现有账号 <span class="count" id="countActive">0</span>
+      </button>
+      <button class="tab-btn" data-inventory="dead" onclick="switchInventory('dead')">
+        🔴 死号 <span class="count" id="countDead">0</span>
+      </button>
+      <button class="tab-btn" data-inventory="sold" onclick="switchInventory('sold')">
+        🟡 已售 <span class="count" id="countSold">0</span>
+      </button>
+    </div>
+    
+    <!-- 统计 -->
+    <div class="stats">
+      <div class="stat-card active">
+        <h3>现有账号</h3>
+        <div class="number" id="statActive">0</div>
+      </div>
+      <div class="stat-card dead">
+        <h3>死号</h3>
+        <div class="number" id="statDead">0</div>
+      </div>
+      <div class="stat-card sold">
+        <h3>已售</h3>
+        <div class="number" id="statSold">0</div>
+      </div>
+      <div class="stat-card total">
+        <h3>总账号</h3>
+        <div class="number" id="statTotal">0</div>
+      </div>
+      <div class="stat-card backup">
+        <h3>备份记录</h3>
+        <div class="number" id="statBackup">0</div>
+      </div>
+    </div>
+    
+    <!-- 操作栏 -->
+    <div class="action-bar">
+      <button class="btn btn-primary" onclick="showAddModal()">➕ 添加账号</button>
+      <button class="btn btn-success" onclick="showImportModal()">📥 导入Excel</button>
+      <button class="btn btn-info" onclick="showCheckModal()">🔍 批量检测存活</button>
+      <button class="btn btn-warning" onclick="checkDuplicates()">⚠️ 检测重复</button>
+      <button class="btn btn-secondary" onclick="exportCurrentInventory()">📊 导出当前库存</button>
+      <button class="btn btn-secondary" onclick="showTemplateModal()">📋 下载模板</button>
+      <button class="btn btn-purple" onclick="showBackupModal()">💾 备份管理</button>
+      <button class="btn btn-danger" onclick="clearCurrentInventory()">🗑️ 清空当前库存</button>
+    </div>
+    
+    <!-- 批量操作栏 -->
+    <div class="batch-actions" id="batchActions">
+      <span>已选择 <strong id="selectedCount">0</strong> 个账号</span>
+      <button class="btn btn-warning" onclick="batchMove()">📦 批量迁移</button>
+      <button class="btn btn-danger" onclick="batchDelete()">🗑️ 批量删除</button>
+      <button class="btn btn-secondary" onclick="clearSelection()">清除选择</button>
+    </div>
+    
+    <!-- 筛选 -->
+    <div class="filter-section">
+      <div class="filter-grid">
+        <input type="text" class="filter-input" id="filterPlatform" placeholder="筛选平台...">
+        <input type="text" class="filter-input" id="filterUsername" placeholder="筛选账号...">
+        <input type="text" class="filter-input" id="filterCountry" placeholder="筛选国家...">
+        <input type="text" class="filter-input" id="filterEmail" placeholder="筛选邮箱...">
+        <input type="text" class="filter-input" id="filterStatus" placeholder="筛选状态...">
+      </div>
+      <button class="btn btn-primary" onclick="applyFilter()">🔍 应用筛选</button>
+      <button class="btn btn-secondary" onclick="clearFilter()">清除筛选</button>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="table-section">
+      <div class="duplicate-warning" id="duplicateWarning">
+        ⚠️ 检测到 <strong id="duplicateCount">0</strong> 个重复账号！
+      </div>
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+            <th>ID</th>
+            <th>平台</th>
+            <th>账号</th>
+            <th>邮箱</th>
+            <th>国家</th>
+            <th>好友</th>
+            <th>UA</th>
+            <th>1解</th>
+            <th>2解</th>
+            <th>3解</th>
+            <th>入库时间</th>
+            <th>存活状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display: block;">
+        <div class="empty-state-icon">📭</div>
+        <p>暂无数据，请添加账号或导入Excel</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 添加/编辑模态框 -->
+  <div class="modal" id="accountModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📝 <span id="modalTitle">添加账号</span></h2>
+        <button class="close-btn" onclick="closeModal('accountModal')">×</button>
+      </div>
+      <form id="accountForm">
+        <input type="hidden" id="editId">
+        <input type="hidden" id="editInventory">
+        
+        <h3 style="margin-bottom: 16px; color: #667eea;">基本信息</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>库存位置 *</label>
+            <select id="inventoryType" required>
+              <option value="active">现有账号</option>
+              <option value="dead">死号</option>
+              <option value="sold">已售</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>平台 *</label>
+            <select id="platform" required>
+              <option value="">选择平台</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Twitter">Twitter/X</option>
+              <option value="TikTok">TikTok</option>
+              <option value="YouTube">YouTube</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Telegram">Telegram</option>
+              <option value="微信">微信</option>
+              <option value="抖音">抖音</option>
+              <option value="小红书">小红书</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>账号/用户名 *</label>
+            <input type="text" id="username" placeholder="输入账号" required>
+          </div>
+          <div class="form-group">
+            <label>密码</label>
+            <input type="text" id="password" placeholder="输入密码">
+          </div>
+          <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" id="email" placeholder="example@email.com">
+          </div>
+          <div class="form-group">
+            <label>邮箱密码</label>
+            <input type="text" id="emailPassword" placeholder="邮箱登录密码">
+          </div>
+          <div class="form-group">
+            <label>国家/地区</label>
+            <select id="country">
+              <option value="">选择国家</option>
+              <option value="美国">美国</option>
+              <option value="英国">英国</option>
+              <option value="加拿大">加拿大</option>
+              <option value="澳大利亚">澳大利亚</option>
+              <option value="德国">德国</option>
+              <option value="法国">法国</option>
+              <option value="日本">日本</option>
+              <option value="韩国">韩国</option>
+              <option value="中国">中国</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>双重验证(2FA)</label>
+            <input type="text" id="twoFactor" placeholder="2FA密钥">
+          </div>
+        </div>
+        
+        <h3 style="margin: 24px 0 16px; color: #667eea;">技术信息</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>原CK</label>
+            <input type="text" id="originalCookie" placeholder="原始Cookie">
+          </div>
+          <div class="form-group">
+            <label>CK</label>
+            <input type="text" id="cookie" placeholder="当前Cookie">
+          </div>
+          <div class="form-group">
+            <label>UA (User-Agent)</label>
+            <input type="text" id="userAgent" placeholder="浏览器UA">
+          </div>
+          <div class="form-group">
+            <label>好友数量</label>
+            <input type="number" id="friends" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>主页链接</label>
+            <input type="text" id="homepage" placeholder="个人主页URL">
+          </div>
+          <div class="form-group">
+            <label>FB个号</label>
+            <input type="text" id="fbAccount" placeholder="Facebook个人号">
+          </div>
+        </div>
+        
+        <h3 style="margin: 24px 0 16px; color: #667eea;">解锁状态</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>1解</label>
+            <select id="unlock1">
+              <option value="">未设置</option>
+              <option value="已通过">已通过</option>
+              <option value="未通过">未通过</option>
+              <option value="不需要">不需要</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>2解</label>
+            <select id="unlock2">
+              <option value="">未设置</option>
+              <option value="已通过">已通过</option>
+              <option value="未通过">未通过</option>
+              <option value="不需要">不需要</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>3解</label>
+            <select id="unlock3">
+              <option value="">未设置</option>
+              <option value="已通过">已通过</option>
+              <option value="未通过">未通过</option>
+              <option value="不需要">不需要</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>友缘</label>
+            <select id="dating">
+              <option value="">未设置</option>
+              <option value="已开通">已开通</option>
+              <option value="未开通">未开通</option>
+            </select>
+          </div>
+        </div>
+        
+        <h3 style="margin: 24px 0 16px; color: #667eea;">其他</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>入库时间</label>
+            <input type="datetime-local" id="storageTime">
+          </div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label>备注</label>
+            <input type="text" id="notes" placeholder="其他信息">
+          </div>
+        </div>
+        
+        <div style="margin-top: 24px;">
+          <button type="submit" class="btn btn-primary">💾 保存账号</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('accountModal')">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- 导入模态框 -->
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📥 导入数据</h2>
+        <button class="close-btn" onclick="closeModal('importModal')">×</button>
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <label>导入到库存：</label>
+        <select id="importTargetInventory" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;">
+          <option value="active">现有账号</option>
+          <option value="dead">死号</option>
+          <option value="sold">已售</option>
+        </select>
+      </div>
+      
+      <div class="file-upload-area" id="dropZone">
+        <div style="font-size: 48px; margin-bottom: 16px;">📁</div>
+        <p>点击选择文件或拖拽到此处</p>
+        <p style="color: #999; font-size: 14px; margin-top: 8px;">支持 .xlsx, .xls, .csv 格式</p>
+        <input type="file" id="importFile" style="display: none" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this)">
+      </div>
+      
+      <div class="validation-errors" id="validationErrors">
+        <strong>⚠️ 数据验证问题：</strong>
+        <ul id="validationList"></ul>
+      </div>
+      
+      <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+        <h4 style="color: #1976d2; margin-bottom: 8px;">📋 Excel模板字段说明：</h4>
+        <p style="font-size: 13px; line-height: 1.8;">
+          平台、账号、密码、邮箱、邮箱密码、国家、原CK、CK、UA、好友、主页、FB个号、<br>
+          友缘、1解、2解、3解、入库时间、双重验证、备注
+        </p>
+      </div>
+      
+      <div id="importPreview" style="display: none;">
+        <h4>数据预览（前5条）：</h4>
+        <div style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin: 12px 0;">
+          <table id="previewTable" style="font-size: 12px; width: 100%;">
+            <thead><tr></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="importStats"></p>
+        <div class="duplicate-warning" id="importDuplicateWarning">
+          ⚠️ 检测到 <span id="importDuplicateCount">0</span> 个重复账号，导入时将自动跳过
+        </div>
+      </div>
+      
+      <div id="importProgress" style="display: none;">
+        <p>导入进度：</p>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <p id="progressText">0%</p>
+      </div>
+      
+      <div>
+        <button class="btn btn-primary" id="confirmImportBtn" onclick="confirmImport()" style="display: none;">✅ 确认导入</button>
+        <button class="btn btn-secondary" onclick="closeModal('importModal')">取消</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 存活检测模态框 -->
+  <div class="modal" id="checkModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2>🔍 批量检测账号存活 (2fa.cn)</h2>
+        <button class="close-btn" onclick="closeModal('checkModal')">×</button>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">检测链接</label>
+        <input type="text" id="checkUrl" value="https://2fa.cn/checkuid" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+      </div>
+      
+      <div style="margin-bottom: 20px; background: #e3f2fd; padding: 16px; border-radius: 8px;">
+        <h4 style="color: #1976d2; margin-bottom: 8px;">📋 检测流程：</h4>
+        <ol style="font-size: 13px; line-height: 1.8; padding-left: 20px;">
+          <li>点击下方按钮复制账号列表</li>
+          <li>打开检测网站</li>
+          <li>粘贴到输入框，点击 CHECK</li>
+          <li>复制 "UID Die" 里的死亡账号</li>
+          <li>粘贴到下方输入框，点击处理</li>
+        </ol>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+          待检测账号列表 (<span id="checkAccountCount">0</span> 个)
+        </label>
+        <textarea id="checkAccountList" rows="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 13px;" readonly></textarea>
+        <button class="btn btn-primary" onclick="copyAccountList()" style="margin-top: 8px;">📋 复制账号列表</button>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+          死亡账号列表（从检测网站复制 UID Die 结果）
+        </label>
+        <textarea id="deadAccountList" rows="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 13px;" placeholder="每行一个死亡账号..."></textarea>
+      </div>
+      
+      <div class="checkbox-group" style="margin-bottom: 20px;">
+        <input type="checkbox" id="autoMoveDead2fa" checked>
+        <label for="autoMoveDead2fa">自动将死亡账号迁移到死号库存</label>
+      </div>
+      
+      <div>
+        <button class="btn btn-primary" onclick="processDeadAccounts()">⚡ 处理死亡账号</button>
+        <button class="btn btn-secondary" onclick="closeModal('checkModal')">取消</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 迁移模态框 -->
+  <div class="modal" id="moveModal">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h2>📦 迁移账号</h2>
+        <button class="close-btn" onclick="closeModal('moveModal')">×</button>
+      </div>
+      
+      <p style="margin-bottom: 16px;">将选中的 <strong id="moveCount">0</strong> 个账号迁移到：</p>
+      
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label>目标库存</label>
+        <select id="targetInventory" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+          <option value="active">🟢 现有账号</option>
+          <option value="dead">🔴 死号</option>
+          <option value="sold">🟡 已售</option>
+        </select>
+      </div>
+      
+      <div>
+        <button class="btn btn-primary" onclick="confirmMove()">✅ 确认迁移</button>
+        <button class="btn btn-secondary" onclick="closeModal('moveModal')">取消</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 模板下载模态框 -->
+  <div class="modal" id="templateModal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>📋 下载导入模板</h2>
+        <button class="close-btn" onclick="closeModal('templateModal')">×</button>
+      </div>
+      
+      <p style="margin-bottom: 16px; color: #666;">选择需要导出的字段：</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px;">
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="平台" checked> 平台</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="账号" checked> 账号</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="密码" checked> 密码</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="邮箱" checked> 邮箱</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="邮箱密码" checked> 邮箱密码</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="国家" checked> 国家</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="原CK"> 原CK</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="CK"> CK</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="UA"> UA</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="好友"> 好友</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="主页"> 主页</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="FB个号"> FB个号</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="友缘"> 友缘</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="1解"> 1解</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="2解"> 2解</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="3解"> 3解</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="入库时间"> 入库时间</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="双重验证"> 双重验证</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="备注"> 备注</label>
+      </div>
+      
+      <div>
+        <button class="btn btn-primary" onclick="downloadCustomTemplate()">⬇️ 下载模板</button>
+        <button class="btn btn-secondary" onclick="closeModal('templateModal')">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 备份管理模态框 -->
+  <div class="modal" id="backupModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2>💾 备份管理</h2>
+        <button class="close-btn" onclick="closeModal('backupModal')">×</button>
+      </div>
+      
+      <!-- 自动备份状态 -->
+      <div class="auto-backup-status" id="autoBackupStatus">
+        <div class="status-dot"></div>
+        <div style="flex: 1;">
+          <strong>自动备份已启用</strong>
+          <p style="font-size: 13px; color: #666; margin-top: 4px;">
+            上次备份：<span id="lastBackupTime">--</span> | 
+            下次备份：<span id="nextBackupTime">--</span>
+          </p>
+        </div>
+        <button class="btn btn-secondary" onclick="toggleAutoBackup()" id="toggleAutoBackupBtn">暂停</button>
+      </div>
+      
+      <!-- 手动备份按钮 -->
+      <div style="margin-bottom: 20px;">
+        <button class="btn btn-primary" onclick="backupAllData()">📦 立即备份</button>
+        <button class="btn btn-success" onclick="document.getElementById('restoreFile').click()">📥 恢复备份</button>
+        <input type="file" id="restoreFile" style="display: none" accept=".json" onchange="handleRestoreFile(this)">
+      </div>
+      
+      <!-- 备份记录列表 -->
+      <h3 style="margin-bottom: 12px; color: #667eea;">备份记录</h3>
+      <div id="backupList" style="max-height: 300px; overflow-y: auto;">
+        <p style="color: #999; text-align: center; padding: 20px;">暂无备份记录</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ==================== 数据存储 ====================
+    let inventories = {
+      active: [],
+      dead: [],
+      sold: []
+    };
+    
+    let currentInventory = 'active';
+    let filteredAccounts = [];
+    let selectedAccounts = new Set();
+    let pendingImportData = [];
+    let accountIndex = new Map(); // ID索引，优化查找性能
+    let existingSet = new Set(); // 平台+账号组合索引，优化查重
+    
+    // 字段映射（支持中文导入）
+    const fieldMap = {
+      '平台': 'platform', 'platform': 'platform',
+      '账号': 'username', 'username': 'username', 'account': 'username',
+      '密码': 'password', 'password': 'password',
+      '邮箱': 'email', 'email': 'email',
+      '邮箱密码': 'emailPassword', 'emailpassword': 'emailPassword', '邮箱登陆密码': 'emailPassword',
+      '国家': 'country', 'country': 'country', '国家/地区': 'country',
+      '原ck': 'originalCookie', '原CK': 'originalCookie', 'originalcookie': 'originalCookie',
+      'ck': 'cookie', 'CK': 'cookie', 'cookie': 'cookie',
+      'ua': 'userAgent', 'UA': 'userAgent', 'useragent': 'userAgent',
+      '好友': 'friends', 'friends': 'friends', '好友数': 'friends', '好友数量': 'friends',
+      '主页': 'homepage', 'homepage': 'homepage', '个人主页': 'homepage',
+      'fb个号': 'fbAccount', 'FB个号': 'fbAccount', 'fbaccount': 'fbAccount',
+      '友缘': 'dating', 'dating': 'dating',
+      '1解': 'unlock1', 'unlock1': 'unlock1',
+      '2解': 'unlock2', 'unlock2': 'unlock2',
+      '3解': 'unlock3', 'unlock3': 'unlock3',
+      '入库时间': 'storageTime', 'storagetime': 'storageTime', '创建时间': 'storageTime',
+      '双重验证': 'twoFactor', 'twofactor': 'twoFactor', '2fa': 'twoFactor', '2FA': 'twoFactor', '双重': 'twoFactor',
+      '备注': 'notes', 'notes': 'notes', 'note': 'notes'
+    };
+    
+    // 自动备份配置
+    const BACKUP_CONFIG = {
+      intervalHours: 24,
+      maxBackups: 30, // 保留最近30个备份
+      autoBackupKey: 'accountManager_autoBackupEnabled',
+      lastBackupKey: 'accountManager_lastBackupTime',
+      backupRecordsKey: 'accountManager_backupRecords'
+    };
+    
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      rebuildIndex();
+      renderTable();
+      updateStats();
+      updateTabCounts();
+      setupDragDrop();
+      initAutoBackup();
+      updateBackupStats();
+    });
+    
+    // ==================== 数据加载与保存 ====================
+    function loadData() {
+      try {
+        inventories.active = JSON.parse(localStorage.getItem('accountManager_active') || '[]');
+        inventories.dead = JSON.parse(localStorage.getItem('accountManager_dead') || '[]');
+        inventories.sold = JSON.parse(localStorage.getItem('accountManager_sold') || '[]');
+      } catch (e) {
+        console.error('数据加载失败:', e);
+        showToast('数据加载失败，使用空数据', 'error');
+        inventories = { active: [], dead: [], sold: [] };
+      }
+    }
+    
+    function saveData() {
+      try {
+        localStorage.setItem('accountManager_active', JSON.stringify(inventories.active));
+        localStorage.setItem('accountManager_dead', JSON.stringify(inventories.dead));
+        localStorage.setItem('accountManager_sold', JSON.stringify(inventories.sold));
+        rebuildIndex();
+        return true;
+      } catch (e) {
+        console.error('数据保存失败:', e);
+        showToast('数据保存失败: ' + e.message, 'error');
+        return false;
+      }
+    }
+    
+    // ==================== 索引重建（性能优化）====================
+    function rebuildIndex() {
+      accountIndex.clear();
+      existingSet.clear();
+      
+      ['active', 'dead', 'sold'].forEach(type => {
+        inventories[type].forEach(acc => {
+          // ID索引
+          accountIndex.set(acc.id, { account: acc, type });
+          // 平台+账号索引（查重用）
+          if (acc.platform && acc.username) {
+            existingSet.add(`${acc.platform}-${acc.username}`.toLowerCase());
+          }
+        });
+      });
+    }
+    
+    // ==================== 工具函数 ====================
+    function showToast(message, type = 'success', duration = 3000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => toast.classList.remove('show'), duration);
+    }
+    
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    }
+    
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('show');
+    }
+    
+    function getInventoryName(type) {
+      const names = { active: '现有账号', dead: '死号', sold: '已售' };
+      return names[type] || type;
+    }
+    
+    // ==================== 索引查找（O(1)）====================
+    function findAccountById(id) {
+      const result = accountIndex.get(id);
+      return result ? result.account : null;
+    }
+    
+    function getAccountType(id) {
+      const result = accountIndex.get(id);
+      return result ? result.type : null;
+    }
+    
+    function isDuplicate(platform, username, excludeId = null) {
+      const key = `${platform}-${username}`.toLowerCase();
+      if (excludeId) {
+        // 编辑时排除自己
+        const existing = findAccountById(excludeId);
+        if (existing && existing.platform === platform && existing.username === username) {
+          return false;
+        }
+      }
+      return existingSet.has(key);
+    }
+    
+    // ==================== 库存切换 ====================
+    function switchInventory(type) {
+      currentInventory = type;
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.inventory === type) {
+          btn.classList.add('active');
+        }
+      });
+      
+      clearFilter();
+      clearSelection();
+      renderTable();
+    }
+    
+    function updateTabCounts() {
+      document.getElementById('countActive').textContent = inventories.active.length;
+      document.getElementById('countDead').textContent = inventories.dead.length;
+      document.getElementById('countSold').textContent = inventories.sold.length;
+    }
+    
+    function updateStats() {
+      document.getElementById('statActive').textContent = inventories.active.length;
+      document.getElementById('statDead').textContent = inventories.dead.length;
+      document.getElementById('statSold').textContent = inventories.sold.length;
+      document.getElementById('statTotal').textContent = 
+        inventories.active.length + inventories.dead.length + inventories.sold.length;
+    }
+    
+    // ==================== 表格渲染 ====================
+    function renderTable(data = null) {
+      const accounts = data || inventories[currentInventory];
+      filteredAccounts = accounts;
+      const tbody = document.getElementById('tableBody');
+      const emptyState = document.getElementById('emptyState');
+      
+      if (accounts.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      emptyState.style.display = 'none';
+      
+      // 使用DocumentFragment优化大量数据渲染
+      const fragment = document.createDocumentFragment();
+      
+      accounts.forEach(account => {
+        const tr = document.createElement('tr');
+        tr.className = selectedAccounts.has(account.id) ? 'selected' : '';
+        tr.dataset.id = account.id;
+        
+        tr.innerHTML = `
+          <td><input type="checkbox" ${selectedAccounts.has(account.id) ? 'checked' : ''} 
+            onchange="toggleSelect('${account.id}')"></td>
+          <td>${account.id.substr(-6)}</td>
+          <td><span class="tag tag-platform">${account.platform || '-'}</span></td>
+          <td>${escapeHtml(account.username)}</td>
+          <td>${account.email ? escapeHtml(account.email) : '-'}</td>
+          <td>${account.country ? `<span class="tag tag-country">${escapeHtml(account.country)}</span>` : '-'}</td>
+          <td>${account.friends || 0}</td>
+          <td>${account.userAgent ? '✅' : '❌'}</td>
+          <td>${account.unlock1 ? `<span class="tag tag-unlock">${account.unlock1}</span>` : '-'}</td>
+          <td>${account.unlock2 ? `<span class="tag tag-unlock">${account.unlock2}</span>` : '-'}</td>
+          <td>${account.unlock3 ? `<span class="tag tag-unlock">${account.unlock3}</span>` : '-'}</td>
+          <td>${account.storageTime ? formatDate(account.storageTime) : '-'}</td>
+          <td>${getStatusBadge(account)}</td>
+          <td class="action-btns">
+            <button class="btn-check" onclick="checkSingleAccount('${account.id}')" title="检测存活">🔍</button>
+            <button class="btn-edit" onclick="editAccount('${account.id}')">编辑</button>
+            <button class="btn-move" onclick="moveSingleAccount('${account.id}')">迁移</button>
+            <button class="btn-delete" onclick="deleteAccount('${account.id}')">删除</button>
+          </td>
+        `;
+        fragment.appendChild(tr);
+      });
+      
+      tbody.innerHTML = '';
+      tbody.appendChild(fragment);
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function formatDate(dateStr) {
+      try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('zh-CN');
+      } catch {
+        return dateStr;
+      }
+    }
+    
+    function getStatusBadge(account) {
+      if (account.checkStatus === 'alive') {
+        return '<span class="check-result check-alive">✅ 存活</span>';
+      } else if (account.checkStatus === 'dead') {
+        return '<span class="check-result check-dead">❌ 死亡</span>';
+      } else {
+        return '<span class="check-result check-pending">⏳ 未检测</span>';
+      }
+    }
+    
+    // ==================== 添加/编辑账号 ====================
+    function showAddModal() {
+      document.getElementById('modalTitle').textContent = '添加账号';
+      document.getElementById('accountForm').reset();
+      document.getElementById('editId').value = '';
+      document.getElementById('editInventory').value = '';
+      document.getElementById('inventoryType').value = currentInventory;
+      document.getElementById('storageTime').value = new Date().toISOString().slice(0, 16);
+      document.getElementById('accountModal').classList.add('show');
+    }
+    
+    function editAccount(id) {
+      const account = findAccountById(id);
+      if (!account) return;
+      
+      const type = getAccountType(id);
+      
+      document.getElementById('modalTitle').textContent = '编辑账号';
+      document.getElementById('editId').value = account.id;
+      document.getElementById('editInventory').value = type;
+      
+      document.getElementById('inventoryType').value = type;
+      document.getElementById('platform').value = account.platform || '';
+      document.getElementById('username').value = account.username || '';
+      document.getElementById('password').value = account.password || '';
+      document.getElementById('email').value = account.email || '';
+      document.getElementById('emailPassword').value = account.emailPassword || '';
+      document.getElementById('country').value = account.country || '';
+      document.getElementById('originalCookie').value = account.originalCookie || '';
+      document.getElementById('cookie').value = account.cookie || '';
+      document.getElementById('userAgent').value = account.userAgent || '';
+      document.getElementById('friends').value = account.friends || '';
+      document.getElementById('homepage').value = account.homepage || '';
+      document.getElementById('fbAccount').value = account.fbAccount || '';
+      document.getElementById('dating').value = account.dating || '';
+      document.getElementById('unlock1').value = account.unlock1 || '';
+      document.getElementById('unlock2').value = account.unlock2 || '';
+      document.getElementById('unlock3').value = account.unlock3 || '';
+      document.getElementById('storageTime').value = account.storageTime ? account.storageTime.slice(0, 16) : '';
+      document.getElementById('twoFactor').value = account.twoFactor || '';
+      document.getElementById('notes').value = account.notes || '';
+      
+      document.getElementById('accountModal').classList.add('show');
+    }
+    
+    document.getElementById('accountForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const editId = document.getElementById('editId').value;
+      const sourceInventory = document.getElementById('editInventory').value || currentInventory;
+      const targetInventory = document.getElementById('inventoryType').value;
+      
+      const platform = document.getElementById('platform').value;
+      const username = document.getElementById('username').value;
+      
+      // 数据验证
+      if (!platform || !username) {
+        showToast('平台和账号为必填项', 'error');
+        return;
+      }
+      
+      // 重复检测
+      if (isDuplicate(platform, username, editId || null)) {
+        showToast('该账号已存在（平台+账号重复）', 'error');
+        return;
+      }
+      
+      const accountData = {
+        id: editId || generateId(),
+        platform: platform,
+        username: username,
+        password: document.getElementById('password').value,
+        email: document.getElementById('email').value,
+        emailPassword: document.getElementById('emailPassword').value,
+        country: document.getElementById('country').value,
+        originalCookie: document.getElementById('originalCookie').value,
+        cookie: document.getElementById('cookie').value,
+        userAgent: document.getElementById('userAgent').value,
+        friends: parseInt(document.getElementById('friends').value) || 0,
+        homepage: document.getElementById('homepage').value,
+        fbAccount: document.getElementById('fbAccount').value,
+        dating: document.getElementById('dating').value,
+        unlock1: document.getElementById('unlock1').value,
+        unlock2: document.getElementById('unlock2').value,
+        unlock3: document.getElementById('unlock3').value,
+        storageTime: document.getElementById('storageTime').value || new Date().toISOString(),
+        twoFactor: document.getElementById('twoFactor').value,
+        notes: document.getElementById('notes').value,
+        checkStatus: editId ? (findAccountById(editId)?.checkStatus || '') : '',
+        createTime: editId ? (findAccountById(editId)?.createTime || new Date().toISOString()) : new Date().toISOString()
+      };
+      
+      if (editId) {
+        if (sourceInventory !== targetInventory) {
+          // 跨库存迁移
+          const idx = inventories[sourceInventory].findIndex(a => a.id === editId);
+          if (idx !== -1) {
+            inventories[sourceInventory].splice(idx, 1);
+            inventories[targetInventory].push(accountData);
+            showToast(`账号已迁移到${getInventoryName(targetInventory)}`);
+          }
+        } else {
+          // 原地编辑
+          const idx = inventories[sourceInventory].findIndex(a => a.id === editId);
+          if (idx !== -1) {
+            inventories[sourceInventory][idx] = accountData;
+            showToast('账号更新成功');
+          }
+        }
+      } else {
+        // 新增
+        inventories[targetInventory].push(accountData);
+        showToast('账号添加成功');
+      }
+      
+      saveData();
+      updateStats();
+      updateTabCounts();
+      renderTable();
+      closeModal('accountModal');
+    });
+    
+    // ==================== 删除（带双重确认）====================
+    function deleteAccount(id) {
+      const account = findAccountById(id);
+      if (!account) return;
+      
+      // 第一次确认 - 显示详细信息
+      const firstConfirm = confirm(
+        `🗑️ 删除账号确认\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📱 平台：${account.platform || '未设置'}\n` +
+        `👤 账号：${account.username}\n` +
+        `📧 邮箱：${account.email || '未设置'}\n` +
+        `🌍 国家：${account.country || '未设置'}\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `⚠️ 警告：删除后无法恢复！\n` +
+        `🤔 确定要删除吗？`
+      );
+      
+      if (!firstConfirm) return;
+      
+      // 第二次确认 - 要求输入"确认删除"
+      const secondConfirm = prompt(
+        `二次确认\n\n` +
+        `请输入 "确认删除" 以继续删除操作：\n\n` +
+        `（输入其他内容或取消将放弃删除）`
+      );
+      
+      if (secondConfirm !== '确认删除') {
+        showToast('删除已取消', 'info');
+        return;
+      }
+      
+      // 执行删除
+      inventories[currentInventory] = inventories[currentInventory].filter(a => a.id !== id);
+      saveData();
+      updateStats();
+      updateTabCounts();
+      renderTable();
+      showToast('✅ 账号已删除');
+    }
+    
+    // ==================== 选择功能 ====================
+    function toggleSelect(id) {
+      if (selectedAccounts.has(id)) {
+        selectedAccounts.delete(id);
+      } else {
+        selectedAccounts.add(id);
+      }
+      updateBatchActions();
+      renderTable();
+    }
+    
+    function toggleSelectAll() {
+      const selectAll = document.getElementById('selectAll').checked;
+      if (selectAll) {
+        filteredAccounts.forEach(a => selectedAccounts.add(a.id));
+      } else {
+        filteredAccounts.forEach(a => selectedAccounts.delete(a.id));
+      }
+      updateBatchActions();
+      renderTable();
+    }
+    
+    function updateBatchActions() {
+      const count = selectedAccounts.size;
+      document.getElementById('selectedCount').textContent = count;
+      document.getElementById('batchActions').classList.toggle('show', count > 0);
+    }
+    
+    function clearSelection() {
+      selectedAccounts.clear();
+      document.getElementById('selectAll').checked = false;
+      updateBatchActions();
+      renderTable();
+    }
+    
+    // ==================== 批量删除（严格二次确认）====================
+    function batchDelete() {
+      const count = selectedAccounts.size;
+      if (count === 0) return;
+      
+      // 获取选中的账号详情
+      const selectedList = [];
+      selectedAccounts.forEach(id => {
+        const acc = findAccountById(id);
+        if (acc) selectedList.push(acc);
+      });
+      
+      // 显示前5个账号
+      let accountPreview = selectedList.slice(0, 5).map(a => 
+        `  • [${a.platform}] ${a.username}`
+      ).join('\n');
+      if (selectedList.length > 5) {
+        accountPreview += `\n  ... 还有 ${selectedList.length - 5} 个账号`;
+      }
+      
+      // 第一次确认
+      const firstConfirm = confirm(
+        `🗑️ 批量删除确认\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `即将删除 ${count} 个账号\n\n` +
+        `账号列表：\n${accountPreview}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `⚠️ 警告：此操作不可恢复！\n` +
+        `🤔 确定要继续吗？`
+      );
+      
+      if (!firstConfirm) {
+        showToast('批量删除已取消', 'info');
+        return;
+      }
+      
+      // 第二次确认 - 根据数量不同，确认方式不同
+      if (count <= 5) {
+        // 少量：简单确认
+        const secondConfirm = confirm(
+          `⚠️ 最后确认\n\n` +
+          `确定要永久删除这 ${count} 个账号吗？`
+        );
+        if (!secondConfirm) {
+          showToast('删除已取消', 'info');
+          return;
+        }
+      } else if (count <= 20) {
+        // 中等数量：要求输入数字确认
+        const expectedNum = Math.floor(Math.random() * 90) + 10; // 10-99随机数
+        const userInput = prompt(
+          `⚠️ 安全验证\n\n` +
+          `您正在删除 ${count} 个账号\n` +
+          `为防止误操作，请输入数字 ${expectedNum} 以继续：`
+        );
+        if (userInput !== String(expectedNum)) {
+          showToast('输入错误，删除已取消', 'error');
+          return;
+        }
+      } else {
+        // 大量：双重随机数确认
+        const code1 = Math.floor(Math.random() * 90) + 10;
+        const code2 = Math.floor(Math.random() * 90) + 10;
+        const userInput = prompt(
+          `🚨 高风险操作警告！\n\n` +
+          `您正在删除 ${count} 个账号！\n` +
+          `这是大量数据删除操作，请谨慎确认。\n\n` +
+          `请输入验证码 ${code1}-${code2} 以继续：`
+        );
+        if (userInput !== `${code1}-${code2}`) {
+          showToast('验证码错误，删除已取消', 'error');
+          return;
+        }
+      }
+
+      // 执行删除
+      const ids = Array.from(selectedAccounts);
+      inventories[currentInventory] = inventories[currentInventory].filter(a => !ids.includes(a.id));
+      
+      saveData();
+      updateStats();
+      updateTabCounts();
+      clearSelection();
+      renderTable();
+      showToast(`✅ 已删除 ${count} 个账号`);
+    }
+    
+    // ==================== 迁移功能 ====================
+    function moveSingleAccount(id) {
+      selectedAccounts.clear();
+      selectedAccounts.add(id);
+      document.getElementById('moveCount').textContent = 1;
+      document.getElementById('moveModal').classList.add('show');
+    }
+    
+    function batchMove() {
+      document.getElementById('moveCount').textContent = selectedAccounts.size;
+      document.getElementById('moveModal').classList.add('show');
+    }
+    
+    function confirmMove() {
+      const target = document.getElementById('targetInventory').value;
+      const ids = Array.from(selectedAccounts);
+      const targetName = getInventoryName(target);
+      
+      // 检查源和目标是否相同
+      if (target === currentInventory) {
+        showToast('目标库存与当前库存相同，无需迁移', 'warning');
+        closeModal('moveModal');
+        return;
+      }
+      
+      // 获取要迁移的账号预览
+      const moveList = [];
+      ids.forEach(id => {
+        const acc = findAccountById(id);
+        if (acc) moveList.push(acc);
+      });
+      
+      let preview = moveList.slice(0, 5).map(a => 
+        `  • [${a.platform}] ${a.username}`
+      ).join('\n');
+      if (moveList.length > 5) {
+        preview += `\n  ... 还有 ${moveList.length - 5} 个`;
+      }
+      
+      // 确认迁移
+      const confirmed = confirm(
+        `📦 迁移确认\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `迁移数量：${ids.length} 个账号\n` +
+        `从：${getInventoryName(currentInventory)}\n` +
+        `到：${targetName}\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `账号列表：\n${preview}\n\n` +
+        `🤔 确定要迁移吗？`
+      );
+      
+      if (!confirmed) {
+        showToast('迁移已取消', 'info');
+        return;
+      }
+      
+      // 执行迁移
+      let moved = 0;
+      const failed = [];
+      
+      ids.forEach(id => {
+        const account = findAccountById(id);
+        const sourceType = getAccountType(id);
+        
+        if (account && sourceType) {
+          const idx = inventories[sourceType].findIndex(a => a.id === id);
+          if (idx !== -1) {
+            inventories[sourceType].splice(idx, 1);
+            inventories[target].push(account);
+            moved++;
+          } else {
+            failed.push(account.username);
+          }
+        } else {
+          failed.push(id);
+        }
+      });
+      
+      saveData();
+      updateStats();
+      updateTabCounts();
+      clearSelection();
+      
+      // 如果当前查看的是源库存，刷新表格
+      if (currentInventory !== target) {
+        renderTable();
+      }
+      
+      closeModal('moveModal');
+      
+      if (failed.length > 0) {
+        showToast(`迁移完成：成功 ${moved} 个，失败 ${failed.length} 个`, 'warning');
+        console.error('迁移失败的账号:', failed);
+      } else {
+        showToast(`✅ 成功迁移 ${moved} 个账号到${targetName}`);
+      }
+    }
+    
+    // ==================== 筛选 ====================
+    function applyFilter() {
+      const platform = document.getElementById('filterPlatform').value.toLowerCase();
+      const username = document.getElementById('filterUsername').value.toLowerCase();
+      const country = document.getElementById('filterCountry').value.toLowerCase();
+      const email = document.getElementById('filterEmail').value.toLowerCase();
+      const status = document.getElementById('filterStatus').value.toLowerCase();
+      
+      filteredAccounts = inventories[currentInventory].filter(a => {
+        return (!platform || (a.platform || '').toLowerCase().includes(platform)) &&
+               (!username || (a.username || '').toLowerCase().includes(username)) &&
+               (!country || (a.country || '').toLowerCase().includes(country)) &&
+               (!email || (a.email || '').toLowerCase().includes(email)) &&
+               (!status || (a.checkStatus || '').toLowerCase().includes(status));
+      });
+      renderTable(filteredAccounts);
+    }
+    
+    function clearFilter() {
+      document.getElementById('filterPlatform').value = '';
+      document.getElementById('filterUsername').value = '';
+      document.getElementById('filterCountry').value = '';
+      document.getElementById('filterEmail').value = '';
+      document.getElementById('filterStatus').value = '';
+      filteredAccounts = inventories[currentInventory];
+      renderTable();
+    }
+    
+    // ==================== 重复检测 ====================
+    function checkDuplicates() {
+      const seen = new Map();
+      const duplicates = [];
+      
+      ['active', 'dead', 'sold'].forEach(type => {
+        inventories[type].forEach(account => {
+          const key = `${account.platform}-${account.username}`.toLowerCase();
+          if (seen.has(key)) {
+            duplicates.push({
+              first: seen.get(key),
+              second: account,
+              type
+            });
+          } else {
+            seen.set(key, account);
+          }
+        });
+      });
+      
+      const warning = document.getElementById('duplicateWarning');
+      const count = document.getElementById('duplicateCount');
+      
+      if (duplicates.length > 0) {
+        count.textContent = duplicates.length;
+        warning.classList.add('show');
+        showToast(`检测到 ${duplicates.length} 个重复账号`, 'warning');
+        console.table('重复账号：', duplicates);
+      } else {
+        warning.classList.remove('show');
+        showToast('未发现重复账号');
+      }
+    }
+    
+    // ==================== 存活检测 ====================
+    function showCheckModal() {
+      const accountsToCheck = selectedAccounts.size > 0 
+        ? inventories[currentInventory].filter(a => selectedAccounts.has(a.id))
+        : inventories[currentInventory];
+      
+      if (accountsToCheck.length === 0) {
+        showToast('没有可检测的账号', 'error');
+        return;
+      }
+      
+      document.getElementById('checkAccountList').value = accountsToCheck.map(a => a.username).join('\n');
+      document.getElementById('checkAccountCount').textContent = accountsToCheck.length;
+      document.getElementById('deadAccountList').value = '';
+      
+      document.getElementById('checkModal').classList.add('show');
+    }
+    
+    function copyAccountList() {
+      const textarea = document.getElementById('checkAccountList');
+      textarea.select();
+      document.execCommand('copy');
+      showToast('账号列表已复制');
+      
+      const checkUrl = document.getElementById('checkUrl').value || 'https://2fa.cn/checkuid';
+      window.open(checkUrl, '_blank');
+    }
+    
+    function processDeadAccounts() {
+      const deadText = document.getElementById('deadAccountList').value.trim();
+      const autoMove = document.getElementById('autoMoveDead2fa').checked;
+      
+      if (!deadText) {
+        showToast('请输入死亡账号列表', 'error');
+        return;
+      }
+
+      const deadUsernames = new Set(
+        deadText.split('\n')
+          .map(line => line.trim().toLowerCase())
+          .filter(line => line.length > 0)
+      );
+
+      if (deadUsernames.size === 0) {
+        showToast('未找到有效的死亡账号', 'error');
+        return;
+      }
+
+      let movedCount = 0;
+      let markedCount = 0;
+      let notFoundCount = 0;
+      
+      const toMove = [];
+
+      deadUsernames.forEach(username => {
+        let found = false;
+        
+        for (let inv of ['active', 'dead', 'sold']) {
+          const accountIndex = inventories[inv].findIndex(a => 
+            a.username.toLowerCase() === username
+          );
+          
+          if (accountIndex !== -1) {
+            found = true;
+            const account = inventories[inv][accountIndex];
+            
+            account.checkStatus = 'dead';
+            account.lastCheckTime = new Date().toISOString();
+            markedCount++;
+            
+            if (autoMove && inv !== 'dead') {
+              toMove.push({ account, from: inv, index: accountIndex });
+            }
+            break;
+          }
+        }
+        
+        if (!found) notFoundCount++;
+      });
+
+      // 执行迁移
+      toMove.forEach(({ account, from, index }) => {
+        inventories[from].splice(index, 1);
+        inventories.dead.push(account);
+        movedCount++;
+      });
+
+      saveData();
+      updateStats();
+      updateTabCounts();
+      renderTable();
+      clearSelection();
+      closeModal('checkModal');
+
+      showToast(`处理完成！标记: ${markedCount}, 迁移: ${movedCount}, 未找到: ${notFoundCount}`);
+    }
+    
+    function checkSingleAccount(id) {
+      const account = findAccountById(id);
+      if (!account) return;
+      
+      selectedAccounts.clear();
+      selectedAccounts.add(id);
+      
+      document.getElementById('checkAccountList').value = account.username;
+      document.getElementById('checkAccountCount').textContent = 1;
+      document.getElementById('deadAccountList').value = '';
+      document.getElementById('checkModal').classList.add('show');
+    }
+    
+    // ==================== 导入功能（带验证）====================
+    function showImportModal() {
+      document.getElementById('importModal').classList.add('show');
+      document.getElementById('importPreview').style.display = 'none';
+      document.getElementById('confirmImportBtn').style.display = 'none';
+      document.getElementById('importDuplicateWarning').style.display = 'none';
+      document.getElementById('validationErrors').classList.remove('show');
+      pendingImportData = [];
+    }
+    
+    function setupDragDrop() {
+      const dropZone = document.getElementById('dropZone');
+      
+      dropZone.addEventListener('click', () => {
+        document.getElementById('importFile').click();
+      });
+      
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#667eea';
+        dropZone.style.background = '#f8f9fa';
+      });
+      
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = '#ddd';
+        dropZone.style.background = 'white';
+      });
+      
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#ddd';
+        dropZone.style.background = 'white';
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleFile(files[0]);
+        }
+      });
+    }
+    
+    function handleFileSelect(input) {
+      if (input.files.length > 0) {
+        handleFile(input.files[0]);
+      }
+    }
+    
+    function handleFile(file) {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+          processImportData(jsonData);
+        } catch (err) {
+          showToast('文件解析失败: ' + err.message, 'error');
+        }
+      };
+      
+      reader.readAsArrayBuffer(file);
+    }
+    
+    function processImportData(data) {
+      if (!Array.isArray(data) || data.length === 0) {
+        showToast('文件中没有数据', 'error');
+        return;
+      }
+
+      const targetInventory = document.getElementById('importTargetInventory').value;
+      const errors = [];
+      
+      pendingImportData = data.map((row, index) => {
+        const item = { 
+          id: generateId(), 
+          createTime: new Date().toISOString(),
+          inventory: targetInventory,
+          checkStatus: ''
+        };
+        
+        // 字段映射
+        for (let key in row) {
+          const mappedKey = fieldMap[key];
+          if (mappedKey) {
+            item[mappedKey] = String(row[key]).trim();
+          }
+        }
+        
+        // 数据验证
+        if (!item.platform) {
+          errors.push(`第${index + 1}行：平台不能为空`);
+        }
+        if (!item.username) {
+          errors.push(`第${index + 1}行：账号不能为空`);
+        }
+        if (item.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.email)) {
+          errors.push(`第${index + 1}行：邮箱格式错误 (${item.email})`);
+        }
+        
+        // 确保有入库时间
+        if (!item.storageTime) {
+          item.storageTime = new Date().toISOString();
+        }
+        
+        return item;
+      }).filter(item => item.username && item.platform);
+
+      // 显示验证错误
+      const validationDiv = document.getElementById('validationErrors');
+      const validationList = document.getElementById('validationList');
+      
+      if (errors.length > 0) {
+        validationList.innerHTML = errors.slice(0, 10).map(e => `<li>${e}</li>`).join('') + 
+          (errors.length > 10 ? `<li>...还有 ${errors.length - 10} 个问题</li>` : '');
+        validationDiv.classList.add('show');
+        showToast(`发现 ${errors.length} 个数据问题`, 'warning');
+      } else {
+        validationDiv.classList.remove('show');
+      }
+
+      // 检查重复
+      const duplicates = pendingImportData.filter(newItem => 
+        existingSet.has(`${newItem.platform}-${newItem.username}`.toLowerCase())
+      );
+
+      showImportPreview(pendingImportData, duplicates.length);
+    }
+    
+    function showImportPreview(data, duplicateCount) {
+      const previewDiv = document.getElementById('importPreview');
+      const table = document.getElementById('previewTable');
+      const confirmBtn = document.getElementById('confirmImportBtn');
+      const dupWarning = document.getElementById('importDuplicateWarning');
+      
+      const previewData = data.slice(0, 5);
+      
+      if (previewData.length > 0) {
+        const headers = ['平台', '账号', '邮箱', '国家'];
+        table.querySelector('thead tr').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+        
+        table.querySelector('tbody').innerHTML = previewData.map(row => `
+          <tr>
+            <td>${escapeHtml(row.platform) || '-'}</td>
+            <td>${escapeHtml(row.username)}</td>
+            <td>${escapeHtml(row.email) || '-'}</td>
+            <td>${escapeHtml(row.country) || '-'}</td>
+          </tr>
+        `).join('');
+        
+        document.getElementById('importStats').innerHTML = 
+          `共找到 <strong>${data.length}</strong> 条有效记录` +
+          (data.length > 5 ? `（显示前5条）` : '');
+        
+        previewDiv.style.display = 'block';
+        confirmBtn.style.display = 'inline-block';
+        
+        if (duplicateCount > 0) {
+          document.getElementById('importDuplicateCount').textContent = duplicateCount;
+          dupWarning.style.display = 'block';
+        } else {
+          dupWarning.style.display = 'none';
+        }
+      }
+    }
+    
+    function confirmImport() {
+      const targetInventory = document.getElementById('importTargetInventory').value;
+      
+      document.getElementById('importProgress').style.display = 'block';
+      
+      let imported = 0;
+      let skipped = 0;
+      
+      // 批量处理，使用requestAnimationFrame优化性能
+      const processBatch = (startIdx) => {
+        const batchSize = 50;
+        const endIdx = Math.min(startIdx + batchSize, pendingImportData.length);
+        
+        for (let i = startIdx; i < endIdx; i++) {
+          const item = pendingImportData[i];
+          
+          // 检查重复
+          const exists = existingSet.has(`${item.platform}-${item.username}`.toLowerCase());
+          
+          if (!exists) {
+            inventories[targetInventory].push(item);
+            existingSet.add(`${item.platform}-${item.username}`.toLowerCase());
+            imported++;
+          } else {
+            skipped++;
+          }
+          
+          const percent = Math.round(((i + 1) / pendingImportData.length) * 100);
+          document.getElementById('progressFill').style.width = percent + '%';
+          document.getElementById('progressText').textContent = 
+            `${percent}% (${i + 1}/${pendingImportData.length})`;
+        }
+        
+        if (endIdx < pendingImportData.length) {
+          requestAnimationFrame(() => processBatch(endIdx));
+        } else {
+          // 完成
+          saveData();
+          updateStats();
+          updateTabCounts();
+          renderTable();
+          setTimeout(() => {
+            closeModal('importModal');
+            showToast(`导入完成！成功: ${imported}, 跳过: ${skipped}`);
+            
+            // 导入后触发自动备份
+            if (isAutoBackupEnabled()) {
+              setTimeout(() => backupAllData(true), 1000);
+            }
+          }, 500);
+        }
+      };
+      
+      processBatch(0);
+    }
+    
+    // ==================== 导出功能（修复重复字段）====================
+    function exportCurrentInventory() {
+      const accounts = inventories[currentInventory];
+      
+      if (accounts.length === 0) {
+        showToast('当前库存没有数据', 'error');
+        return;
+      }
+      
+      // 修复：只导出指定字段，不重复
+      const data = accounts.map(a => ({
+        '邮箱': a.email || '',
+        '密码': a.password || '',
+        '双重验证': a.twoFactor || '',
+        '国家': a.country || '',
+        'CK': a.cookie || '',
+        '邮箱密码': a.emailPassword || '',
+        'UA': a.userAgent || '',
+        '好友': a.friends || 0,
+        '账号': a.username || ''
+      }));
+      
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, getInventoryName(currentInventory));
+      
+      const safeDate = new Date().toISOString().split('T')[0];
+      const fileName = `${getInventoryName(currentInventory)}_${safeDate}.xlsx`;
+      
+      XLSX.writeFile(wb, fileName);
+      showToast(`导出成功：${accounts.length} 条数据`);
+    }
+    
+    function showTemplateModal() {
+      document.getElementById('templateModal').classList.add('show');
+    }
+    
+    function downloadCustomTemplate() {
+      const fields = Array.from(document.querySelectorAll('.template-field:checked')).map(cb => cb.value);
+      
+      if (fields.length === 0) {
+        showToast('请至少选择一个字段', 'error');
+        return;
+      }
+      
+      const template = [{}];
+      fields.forEach(field => {
+        template[0][field] = getExampleValue(field);
+      });
+      
+      const ws = XLSX.utils.json_to_sheet(template);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '导入模板');
+      XLSX.writeFile(wb, '账号导入模板.xlsx');
+      showToast('模板下载成功');
+    }
+    
+    function getExampleValue(field) {
+      const examples = {
+        '平台': 'Facebook',
+        '账号': 'example_user',
+        '密码': 'password123',
+        '邮箱': 'user@email.com',
+        '邮箱密码': 'email_pass123',
+        '国家': '美国',
+        '原CK': 'original_cookie_data',
+        'CK': 'current_cookie_data',
+        'UA': 'Mozilla/5.0...',
+        '好友': 500,
+        '主页': 'https://facebook.com/user',
+        'FB个号': 'fb_personal_account',
+        '友缘': '已开通',
+        '1解': '已通过',
+        '2解': '未通过',
+        '3解': '不需要',
+        '入库时间': '2024-01-15 10:30',
+        '双重验证': '123456789',
+        '备注': '备用账号'
+      };
+      return examples[field] || '';
+    }
+    
+    // ==================== 清空功能（严格三重确认）====================
+    function clearCurrentInventory() {
+      const count = inventories[currentInventory].length;
+      const inventoryName = getInventoryName(currentInventory);
+      
+      if (count === 0) {
+        showToast('当前库存已经是空的', 'warning');
+        return;
+      }
+      
+      // 第一次确认 - 基本信息
+      const firstConfirm = confirm(
+        `🚨 清空库存警告！\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `目标库存：${inventoryName}\n` +
+        `账号数量：${count} 个\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `⚠️ 此操作将删除该库存中的所有账号！\n` +
+        `⚠️ 删除后无法恢复！\n\n` +
+        `🤔 确定要继续吗？`
+      );
+      
+      if (!firstConfirm) {
+        showToast('清空操作已取消', 'info');
+        return;
+      }
+      
+      // 第二次确认 - 要求输入库存名称
+      const expectedName = inventoryName;
+      const userInputName = prompt(
+        `⚠️ 二次确认\n\n` +
+        `请输入 "${expectedName}" 以确认清空操作：\n\n` +
+        `（输入其他内容将取消操作）`
+      );
+      
+      if (userInputName !== expectedName) {
+        showToast('输入错误，清空操作已取消', 'error');
+        return;
+      }
+      
+      // 第三次确认 - 最终确认码
+      const finalCode = 'DELETE-' + Math.floor(Math.random() * 9000 + 1000);
+      const userInputCode = prompt(
+        `🚨 最终确认\n\n` +
+        `这是最后的确认步骤！\n` +
+        `请输入确认码 ${finalCode} 以执行清空操作：\n\n` +
+        `（输入其他内容将取消操作）`
+      );
+      
+      if (userInputCode !== finalCode) {
+        showToast('确认码错误，清空操作已取消', 'error');
+        return;
+      }
+      
+      // 先自动备份
+      showToast('正在备份数据...', 'info');
+      const backupSuccess = backupAllData(true);
+      
+      if (!backupSuccess) {
+        if (!confirm('自动备份失败，是否仍要继续清空？')) {
+          showToast('清空操作已取消', 'info');
+          return;
+        }
+      }
+      
+      // 执行清空
+      inventories[currentInventory] = [];
+      saveData();
+      updateStats();
+      updateTabCounts();
+      clearSelection();
+      renderTable();
+      updateBackupStats();
+      
+      showToast(
+        `✅ ${inventoryName} 已清空\n` +
+        `💾 数据已自动备份`,
+        'success',
+        5000
+      );
+    }
+    
+    // ==================== 自动备份系统 ====================
+    function isAutoBackupEnabled() {
+      return localStorage.getItem(BACKUP_CONFIG.autoBackupKey) !== 'false';
+    }
+    
+    function initAutoBackup() {
+      // 检查是否需要自动备份
+      checkAndDoAutoBackup();
+      
+      // 每小时检查一次
+      setInterval(checkAndDoAutoBackup, 60 * 60 * 1000);
+    }
+    
+    function checkAndDoAutoBackup() {
+      if (!isAutoBackupEnabled()) return;
+      
+      const lastBackup = localStorage.getItem(BACKUP_CONFIG.lastBackupKey);
+      const now = Date.now();
+      
+      if (!lastBackup) {
+        // 首次使用，立即备份
+        backupAllData(true);
+        return;
+      }
+      
+      const lastTime = parseInt(lastBackup);
+      const hoursSinceLastBackup = (now - lastTime) / (1000 * 60 * 60);
+      
+      if (hoursSinceLastBackup >= BACKUP_CONFIG.intervalHours) {
+        console.log(`距离上次备份已 ${hoursSinceLastBackup.toFixed(1)} 小时，执行自动备份`);
+        backupAllData(true);
+      } else {
+        console.log(`距离上次备份 ${hoursSinceLastBackup.toFixed(1)} 小时，无需备份`);
+      }
+      
+      updateBackupUI();
+    }
+    
+    function backupAllData(isAuto = false) {
+      try {
+        const backup = {
+          version: '2.0',
+          timestamp: new Date().toISOString(),
+          isAuto: isAuto,
+          data: {
+            active: inventories.active,
+            dead: inventories.dead,
+            sold: inventories.sold
+          },
+          stats: {
+            active: inventories.active.length,
+            dead: inventories.dead.length,
+            sold: inventories.sold.length,
+            total: inventories.active.length + inventories.dead.length + inventories.sold.length
+          }
+        };
+        
+        const jsonStr = JSON.stringify(backup);
+        const sizeKB = (jsonStr.length / 1024).toFixed(1);
+        
+        // 保存备份记录
+        const records = getBackupRecords();
+        const record = {
+          id: generateId(),
+          timestamp: backup.timestamp,
+          isAuto: isAuto,
+          size: sizeKB,
+          stats: backup.stats,
+          data: jsonStr // 存储完整数据
+        };
+        
+        records.unshift(record);
+        
+        // 只保留最近N个备份
+        if (records.length > BACKUP_CONFIG.maxBackups) {
+          records.splice(BACKUP_CONFIG.maxBackups);
+        }
+        
+        localStorage.setItem(BACKUP_CONFIG.backupRecordsKey, JSON.stringify(records));
+        localStorage.setItem(BACKUP_CONFIG.lastBackupKey, Date.now().toString());
+        
+        if (!isAuto) {
+          // 手动备份时同时下载文件
+          const blob = new Blob([jsonStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const dateStr = new Date().toISOString().split('T')[0];
+          a.download = `账号备份_${dateStr}_${isAuto ? '自动' : '手动'}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast(`备份完成！共 ${backup.stats.total} 个账号`);
+        } else {
+          console.log('自动备份完成');
+        }
+        
+        updateBackupUI();
+        updateBackupStats();
+        return true;
+      } catch (e) {
+        console.error('备份失败:', e);
+        if (!isAuto) {
+          showToast('备份失败: ' + e.message, 'error');
+        }
+        return false;
+      }
+    }
+    
+    function getBackupRecords() {
+      try {
+        return JSON.parse(localStorage.getItem(BACKUP_CONFIG.backupRecordsKey) || '[]');
+      } catch {
+        return [];
+      }
+    }
+    
+    function showBackupModal() {
+      document.getElementById('backupModal').classList.add('show');
+      updateBackupUI();
+    }
+    
+    function updateBackupUI() {
+      const enabled = isAutoBackupEnabled();
+      const statusDiv = document.getElementById('autoBackupStatus');
+      const btn = document.getElementById('toggleAutoBackupBtn');
+      
+      if (enabled) {
+        statusDiv.classList.remove('disabled');
+        btn.textContent = '暂停';
+      } else {
+        statusDiv.classList.add('disabled');
+        btn.textContent = '启用';
+      }
+      
+      // 更新上次备份时间
+      const lastBackup = localStorage.getItem(BACKUP_CONFIG.lastBackupKey);
+      if (lastBackup) {
+        const lastDate = new Date(parseInt(lastBackup));
+        document.getElementById('lastBackupTime').textContent = 
+          lastDate.toLocaleString('zh-CN');
+        
+        const nextTime = new Date(parseInt(lastBackup) + BACKUP_CONFIG.intervalHours * 60 * 60 * 1000);
+        document.getElementById('nextBackupTime').textContent = 
+          nextTime.toLocaleString('zh-CN');
+      } else {
+        document.getElementById('lastBackupTime').textContent = '从未';
+        document.getElementById('nextBackupTime').textContent = '待首次备份';
+      }
+      
+      // 渲染备份列表
+      const records = getBackupRecords();
+      const listDiv = document.getElementById('backupList');
+      
+      if (records.length === 0) {
+        listDiv.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">暂无备份记录</p>';
+        return;
+      }
+      
+      listDiv.innerHTML = records.map(record => `
+        <div class="backup-record">
+          <div class="backup-info">
+            <div class="backup-date">
+              ${record.isAuto ? '🤖 自动备份' : '👤 手动备份'} - 
+              ${new Date(record.timestamp).toLocaleString('zh-CN')}
+            </div>
+            <div class="backup-size">
+              ${record.stats.total} 个账号 | ${record.size} KB
+              (现有:${record.stats.active} 死号:${record.stats.dead} 已售:${record.stats.sold})
+            </div>
+          </div>
+          <div class="backup-actions">
+            <button class="btn btn-primary" onclick="downloadBackup('${record.id}')" style="padding: 6px 12px; font-size: 12px;">下载</button>
+            <button class="btn btn-success" onclick="restoreFromRecord('${record.id}')" style="padding: 6px 12px; font-size: 12px;">恢复</button>
+            <button class="btn btn-danger" onclick="deleteBackupRecord('${record.id}')" style="padding: 6px 12px; font-size: 12px;">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function updateBackupStats() {
+      const records = getBackupRecords();
+      document.getElementById('statBackup').textContent = records.length;
+    }
+    
+    function toggleAutoBackup() {
+      const enabled = isAutoBackupEnabled();
+      localStorage.setItem(BACKUP_CONFIG.autoBackupKey, (!enabled).toString());
+      updateBackupUI();
+      showToast(enabled ? '自动备份已暂停' : '自动备份已启用');
+    }
+    
+    function downloadBackup(recordId) {
+      const records = getBackupRecords();
+      const record = records.find(r => r.id === recordId);
+      
+      if (!record) {
+        showToast('备份记录不存在', 'error');
+        return;
+      }
+      
+      const blob = new Blob([record.data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date(record.timestamp).toISOString().split('T')[0];
+      a.download = `账号备份_${dateStr}_${record.isAuto ? '自动' : '手动'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    function restoreFromRecord(recordId) {
+      const records = getBackupRecords();
+      const record = records.find(r => r.id === recordId);
+      
+      if (!record) {
+        showToast('备份记录不存在', 'error');
+        return;
+      }
+      
+      if (!confirm(`确定要恢复这个备份吗？\n备份时间：${new Date(record.timestamp).toLocaleString('zh-CN')}\n账号数量：${record.stats.total}\n\n⚠️ 这将覆盖当前所有数据！`)) {
+        return;
+      }
+      
+      try {
+        const backup = JSON.parse(record.data);
+        
+        // 先备份当前数据（防止后悔）
+        backupAllData(true);
+        
+        // 恢复数据
+        inventories.active = backup.data.active || [];
+        inventories.dead = backup.data.dead || [];
+        inventories.sold = backup.data.sold || [];
+        
+        saveData();
+        updateStats();
+        updateTabCounts();
+        renderTable();
+        updateBackupStats();
+        
+        showToast('数据恢复成功！之前的数据已自动备份');
+        closeModal('backupModal');
+      } catch (err) {
+        showToast('恢复失败: ' + err.message, 'error');
+      }
+    }
+    
+    function deleteBackupRecord(recordId) {
+      if (!confirm('确定要删除这条备份记录吗？')) return;
+      
+      const records = getBackupRecords();
+      const filtered = records.filter(r => r.id !== recordId);
+      localStorage.setItem(BACKUP_CONFIG.backupRecordsKey, JSON.stringify(filtered));
+      updateBackupUI();
+      updateBackupStats();
+      showToast('备份记录已删除');
+    }
+    
+    function handleRestoreFile(input) {
+      if (input.files.length === 0) return;
+      
+      const file = input.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const backup = JSON.parse(e.target.result);
+          
+          if (!confirm(`确定要恢复这个备份文件吗？\n备份时间：${new Date(backup.timestamp).toLocaleString('zh-CN')}\n账号数量：${backup.stats.total}\n\n⚠️ 这将覆盖当前所有数据！`)) {
+            return;
+          }
+          
+          // 先备份当前数据
+          backupAllData(true);
+          
+          // 恢复数据
+          inventories.active = backup.data.active || [];
+          inventories.dead = backup.data.dead || [];
+          inventories.sold = backup.data.sold || [];
+          
+          saveData();
+          updateStats();
+          updateTabCounts();
+          renderTable();
+          updateBackupStats();
+          
+          showToast('数据恢复成功！之前的数据已自动备份');
+          closeModal('backupModal');
+        } catch (err) {
+          showToast('备份文件解析失败: ' + err.message, 'error');
+        }
+      };
+      
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
