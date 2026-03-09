@@ -367,6 +367,144 @@
       cursor: pointer;
     }
     
+    /* 多选下拉框样式 */
+    .multi-select-container {
+      position: relative;
+    }
+    .multi-select-trigger {
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+    }
+    .multi-select-trigger:hover {
+      border-color: #667eea;
+    }
+    .multi-select-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-top: 4px;
+      padding: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .multi-select-dropdown.show {
+      display: block;
+    }
+    .multi-select-dropdown label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .multi-select-dropdown label:hover {
+      background: #f5f5f5;
+    }
+    
+    /* 好友数筛选器样式 */
+    .friends-filter-container {
+      position: relative;
+    }
+    .friends-filter-header {
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+    }
+    .friends-filter-header:hover {
+      border-color: #667eea;
+    }
+    .friends-filter-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-top: 4px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+    }
+    .friends-filter-dropdown.show {
+      display: block;
+    }
+    .friends-range-section {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #eee;
+    }
+    .friends-range-section label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .friends-range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .friends-range-inputs input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .friends-range-inputs span {
+      color: #666;
+    }
+    .friends-preset-section label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .friends-presets {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .friends-presets label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: normal;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 4px;
+    }
+    .friends-presets label:hover {
+      background: #f5f5f5;
+    }
+    
     /* 空状态 */
     .empty-state {
       text-align: center;
@@ -507,9 +645,53 @@
       <div class="filter-grid">
         <input type="text" class="filter-input" id="filterPlatform" placeholder="筛选平台...">
         <input type="text" class="filter-input" id="filterUsername" placeholder="筛选账号...">
-        <input type="text" class="filter-input" id="filterCountry" placeholder="筛选国家...">
+        <div class="multi-select-container" id="filterCountryContainer">
+          <div class="multi-select-trigger" onclick="toggleCountryDropdown()">
+            <span id="filterCountryText">选择国家...</span>
+            <span>▼</span>
+          </div>
+          <div class="multi-select-dropdown" id="filterCountryDropdown">
+            <label><input type="checkbox" value="美国" onchange="updateCountryFilter()"> 美国</label>
+            <label><input type="checkbox" value="英国" onchange="updateCountryFilter()"> 英国</label>
+            <label><input type="checkbox" value="加拿大" onchange="updateCountryFilter()"> 加拿大</label>
+            <label><input type="checkbox" value="澳大利亚" onchange="updateCountryFilter()"> 澳大利亚</label>
+            <label><input type="checkbox" value="德国" onchange="updateCountryFilter()"> 德国</label>
+            <label><input type="checkbox" value="法国" onchange="updateCountryFilter()"> 法国</label>
+            <label><input type="checkbox" value="日本" onchange="updateCountryFilter()"> 日本</label>
+            <label><input type="checkbox" value="韩国" onchange="updateCountryFilter()"> 韩国</label>
+            <label><input type="checkbox" value="中国" onchange="updateCountryFilter()"> 中国</label>
+            <label><input type="checkbox" value="其他" onchange="updateCountryFilter()"> 其他</label>
+          </div>
+        </div>
         <input type="text" class="filter-input" id="filterEmail" placeholder="筛选邮箱...">
         <input type="text" class="filter-input" id="filterStatus" placeholder="筛选状态...">
+        <div class="friends-filter-container">
+          <div class="friends-filter-header" onclick="toggleFriendsFilter()">
+            <span id="filterFriendsText">筛选好友数...</span>
+            <span>▼</span>
+          </div>
+          <div class="friends-filter-dropdown" id="filterFriendsDropdown">
+            <div class="friends-range-section">
+              <label>好友数区间：</label>
+              <div class="friends-range-inputs">
+                <input type="number" id="friendsMin" placeholder="最小值" min="0">
+                <span>-</span>
+                <input type="number" id="friendsMax" placeholder="最大值" min="0">
+              </div>
+            </div>
+            <div class="friends-preset-section">
+              <label>快捷选择：</label>
+              <div class="friends-presets">
+                <label><input type="checkbox" value="0" class="friends-preset"> 0好友</label>
+                <label><input type="checkbox" value="1-100" class="friends-preset"> 1-100</label>
+                <label><input type="checkbox" value="101-500" class="friends-preset"> 101-500</label>
+                <label><input type="checkbox" value="501-1000" class="friends-preset"> 501-1000</label>
+                <label><input type="checkbox" value="1001-5000" class="friends-preset"> 1001-5000</label>
+                <label><input type="checkbox" value="5000+" class="friends-preset"> 5000+</label>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <button class="btn btn-primary" onclick="applyFilter()">🔍 应用筛选</button>
       <button class="btn btn-secondary" onclick="clearFilter()">清除筛选</button>
@@ -524,17 +706,26 @@
         <thead>
           <tr>
             <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-            <th>ID</th>
-            <th>平台</th>
-            <th>账号</th>
             <th>邮箱</th>
+            <th>登录密码</th>
+            <th>双重验证码</th>
             <th>国家</th>
-            <th>好友</th>
+            <th>cookie</th>
+            <th>邮箱POP登录密码</th>
             <th>UA</th>
+            <th>好友数</th>
+            <th>账号</th>
+            <th>头像</th>
+            <th>帖子</th>
+            <th>友缘</th>
+            <th>主页</th>
+            <th>备注</th>
+            <th>转换人</th>
+            <th>入库日期</th>
+            <th>原始ck</th>
             <th>1解</th>
             <th>2解</th>
             <th>3解</th>
-            <th>入库时间</th>
             <th>存活状态</th>
             <th>操作</th>
           </tr>
@@ -643,8 +834,16 @@
             <input type="number" id="friends" placeholder="0" min="0">
           </div>
           <div class="form-group">
+            <label>帖子数量</label>
+            <input type="number" id="posts" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
             <label>主页链接</label>
             <input type="text" id="homepage" placeholder="个人主页URL">
+          </div>
+          <div class="form-group">
+            <label>头像URL</label>
+            <input type="text" id="avatar" placeholder="头像图片链接">
           </div>
           <div class="form-group">
             <label>FB个号</label>
@@ -697,7 +896,11 @@
             <label>入库时间</label>
             <input type="datetime-local" id="storageTime">
           </div>
-          <div class="form-group" style="grid-column: span 2;">
+          <div class="form-group">
+            <label>转换人</label>
+            <input type="text" id="converter" placeholder="转换人姓名">
+          </div>
+          <div class="form-group">
             <label>备注</label>
             <input type="text" id="notes" placeholder="其他信息">
           </div>
@@ -743,8 +946,8 @@
       <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
         <h4 style="color: #1976d2; margin-bottom: 8px;">📋 Excel模板字段说明：</h4>
         <p style="font-size: 13px; line-height: 1.8;">
-          平台、账号、密码、邮箱、邮箱密码、国家、原CK、CK、UA、好友、主页、FB个号、<br>
-          友缘、1解、2解、3解、入库时间、双重验证、备注
+          邮箱、登录密码、双重验证码、国家、cookie、邮箱POP登录密码、UA、好友数、账号、头像、帖子、<br>
+          友缘、主页、备注、转换人、入库日期、原始ck、1解、2解、3解
         </p>
       </div>
       
@@ -779,7 +982,7 @@
   
   <!-- 存活检测模态框 -->
   <div class="modal" id="checkModal">
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content" style="max-width: 650px;">
       <div class="modal-header">
         <h2>🔍 批量检测账号存活 (2fa.cn)</h2>
         <button class="close-btn" onclick="closeModal('checkModal')">×</button>
@@ -794,10 +997,11 @@
         <h4 style="color: #1976d2; margin-bottom: 8px;">📋 检测流程：</h4>
         <ol style="font-size: 13px; line-height: 1.8; padding-left: 20px;">
           <li>点击下方按钮复制账号列表</li>
-          <li>打开检测网站</li>
-          <li>粘贴到输入框，点击 CHECK</li>
-          <li>复制 "UID Die" 里的死亡账号</li>
-          <li>粘贴到下方输入框，点击处理</li>
+          <li>打开检测网站，粘贴到 <strong>Input UID</strong> 窗口</li>
+          <li>点击 CHECK 开始检测</li>
+          <li>复制 <strong>UID Die</strong> 里的账号（将自动迁移到死号库）</li>
+          <li>复制 <strong>UID Live</strong> 里的账号（将在原库保持不变）</li>
+          <li>粘贴到下方对应输入框，点击处理</li>
         </ol>
       </div>
       
@@ -805,24 +1009,30 @@
         <label style="display: block; margin-bottom: 8px; font-weight: 500;">
           待检测账号列表 (<span id="checkAccountCount">0</span> 个)
         </label>
-        <textarea id="checkAccountList" rows="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 13px;" readonly></textarea>
-        <button class="btn btn-primary" onclick="copyAccountList()" style="margin-top: 8px;">📋 复制账号列表</button>
+        <textarea id="checkAccountList" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 13px;" readonly></textarea>
+        <button class="btn btn-primary" onclick="copyAccountList()" style="margin-top: 8px;">📋 复制账号列表并打开检测网站</button>
       </div>
       
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 8px; font-weight: 500;">
-          死亡账号列表（从检测网站复制 UID Die 结果）
-        </label>
-        <textarea id="deadAccountList" rows="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 13px;" placeholder="每行一个死亡账号..."></textarea>
-      </div>
-      
-      <div class="checkbox-group" style="margin-bottom: 20px;">
-        <input type="checkbox" id="autoMoveDead2fa" checked>
-        <label for="autoMoveDead2fa">自动将死亡账号迁移到死号库存</label>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #f44336;">
+            🔴 UID Die（死亡账号）
+          </label>
+          <textarea id="deadAccountList" rows="5" style="width: 100%; padding: 12px; border: 2px solid #f44336; border-radius: 8px; font-family: monospace; font-size: 13px;" placeholder="粘贴死亡账号列表，每行一个..."></textarea>
+          <p style="font-size: 12px; color: #666; margin-top: 4px;">这些账号将迁移到死号库</p>
+        </div>
+        
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #4caf50;">
+            🟢 UID Live（存活账号）
+          </label>
+          <textarea id="liveAccountList" rows="5" style="width: 100%; padding: 12px; border: 2px solid #4caf50; border-radius: 8px; font-family: monospace; font-size: 13px;" placeholder="粘贴存活账号列表，每行一个..."></textarea>
+          <p style="font-size: 12px; color: #666; margin-top: 4px;">这些账号保持在原库不变</p>
+        </div>
       </div>
       
       <div>
-        <button class="btn btn-primary" onclick="processDeadAccounts()">⚡ 处理死亡账号</button>
+        <button class="btn btn-primary" onclick="processCheckResults()">⚡ 处理检测结果</button>
         <button class="btn btn-secondary" onclick="closeModal('checkModal')">取消</button>
       </div>
     </div>
@@ -856,7 +1066,7 @@
   
   <!-- 模板下载模态框 -->
   <div class="modal" id="templateModal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 600px;">
       <div class="modal-header">
         <h2>📋 下载导入模板</h2>
         <button class="close-btn" onclick="closeModal('templateModal')">×</button>
@@ -864,26 +1074,27 @@
       
       <p style="margin-bottom: 16px; color: #666;">选择需要导出的字段：</p>
       
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px;">
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="平台" checked> 平台</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="账号" checked> 账号</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="密码" checked> 密码</label>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
         <label class="checkbox-group"><input type="checkbox" class="template-field" value="邮箱" checked> 邮箱</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="邮箱密码" checked> 邮箱密码</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="登录密码" checked> 登录密码</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="双重验证码" checked> 双重验证码</label>
         <label class="checkbox-group"><input type="checkbox" class="template-field" value="国家" checked> 国家</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="原CK"> 原CK</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="CK"> CK</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="UA"> UA</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="好友"> 好友</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="主页"> 主页</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="FB个号"> FB个号</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="cookie" checked> cookie</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="邮箱POP登录密码" checked> 邮箱POP登录密码</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="UA" checked> UA</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="好友数" checked> 好友数</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="账号" checked> 账号</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="头像"> 头像</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="帖子"> 帖子</label>
         <label class="checkbox-group"><input type="checkbox" class="template-field" value="友缘"> 友缘</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="主页"> 主页</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="备注"> 备注</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="转换人"> 转换人</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="入库日期"> 入库日期</label>
+        <label class="checkbox-group"><input type="checkbox" class="template-field" value="原始ck"> 原始ck</label>
         <label class="checkbox-group"><input type="checkbox" class="template-field" value="1解"> 1解</label>
         <label class="checkbox-group"><input type="checkbox" class="template-field" value="2解"> 2解</label>
         <label class="checkbox-group"><input type="checkbox" class="template-field" value="3解"> 3解</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="入库时间"> 入库时间</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="双重验证"> 双重验证</label>
-        <label class="checkbox-group"><input type="checkbox" class="template-field" value="备注"> 备注</label>
       </div>
       
       <div>
@@ -949,13 +1160,14 @@
     
     // 字段映射（支持中文导入）
     const fieldMap = {
+      // 原有字段映射
       '平台': 'platform', 'platform': 'platform',
       '账号': 'username', 'username': 'username', 'account': 'username',
-      '密码': 'password', 'password': 'password',
+      '密码': 'password', 'password': 'password', '登录密码': 'password',
       '邮箱': 'email', 'email': 'email',
-      '邮箱密码': 'emailPassword', 'emailpassword': 'emailPassword', '邮箱登陆密码': 'emailPassword',
+      '邮箱密码': 'emailPassword', 'emailpassword': 'emailPassword', '邮箱登陆密码': 'emailPassword', '邮箱POP登录密码': 'emailPassword',
       '国家': 'country', 'country': 'country', '国家/地区': 'country',
-      '原ck': 'originalCookie', '原CK': 'originalCookie', 'originalcookie': 'originalCookie',
+      '原ck': 'originalCookie', '原CK': 'originalCookie', 'originalcookie': 'originalCookie', '原始ck': 'originalCookie',
       'ck': 'cookie', 'CK': 'cookie', 'cookie': 'cookie',
       'ua': 'userAgent', 'UA': 'userAgent', 'useragent': 'userAgent',
       '好友': 'friends', 'friends': 'friends', '好友数': 'friends', '好友数量': 'friends',
@@ -965,9 +1177,13 @@
       '1解': 'unlock1', 'unlock1': 'unlock1',
       '2解': 'unlock2', 'unlock2': 'unlock2',
       '3解': 'unlock3', 'unlock3': 'unlock3',
-      '入库时间': 'storageTime', 'storagetime': 'storageTime', '创建时间': 'storageTime',
-      '双重验证': 'twoFactor', 'twofactor': 'twoFactor', '2fa': 'twoFactor', '2FA': 'twoFactor', '双重': 'twoFactor',
-      '备注': 'notes', 'notes': 'notes', 'note': 'notes'
+      '入库时间': 'storageTime', 'storagetime': 'storageTime', '创建时间': 'storageTime', '入库日期': 'storageTime',
+      '双重验证': 'twoFactor', 'twofactor': 'twoFactor', '2fa': 'twoFactor', '2FA': 'twoFactor', '双重': 'twoFactor', '双重验证码': 'twoFactor',
+      '备注': 'notes', 'notes': 'notes', 'note': 'notes',
+      // 新字段映射
+      '头像': 'avatar', 'avatar': 'avatar',
+      '帖子': 'posts', 'posts': 'posts',
+      '转换人': 'converter', 'converter': 'converter', '转换': 'converter'
     };
     
     // 自动备份配置
@@ -1135,17 +1351,26 @@
         tr.innerHTML = `
           <td><input type="checkbox" ${selectedAccounts.has(account.id) ? 'checked' : ''} 
             onchange="toggleSelect('${account.id}')"></td>
-          <td>${account.id.substr(-6)}</td>
-          <td><span class="tag tag-platform">${account.platform || '-'}</span></td>
-          <td>${escapeHtml(account.username)}</td>
           <td>${account.email ? escapeHtml(account.email) : '-'}</td>
+          <td>${account.password ? '••••' : '-'}</td>
+          <td>${account.twoFactor ? escapeHtml(account.twoFactor) : '-'}</td>
           <td>${account.country ? `<span class="tag tag-country">${escapeHtml(account.country)}</span>` : '-'}</td>
-          <td>${account.friends || 0}</td>
+          <td>${account.cookie ? '••••' : '-'}</td>
+          <td>${account.emailPassword ? '••••' : '-'}</td>
           <td>${account.userAgent ? '✅' : '❌'}</td>
+          <td>${account.friends || 0}</td>
+          <td>${escapeHtml(account.username)}</td>
+          <td>${account.avatar ? '<a href="' + escapeHtml(account.avatar) + '" target="_blank">👤</a>' : '-'}</td>
+          <td>${account.posts || 0}</td>
+          <td>${account.dating || '-'}</td>
+          <td>${account.homepage ? '<a href="' + escapeHtml(account.homepage) + '" target="_blank">🔗</a>' : '-'}</td>
+          <td>${account.notes ? escapeHtml(account.notes) : '-'}</td>
+          <td>${account.converter ? escapeHtml(account.converter) : '-'}</td>
+          <td>${account.storageTime ? formatDate(account.storageTime) : '-'}</td>
+          <td>${account.originalCookie ? '••••' : '-'}</td>
           <td>${account.unlock1 ? `<span class="tag tag-unlock">${account.unlock1}</span>` : '-'}</td>
           <td>${account.unlock2 ? `<span class="tag tag-unlock">${account.unlock2}</span>` : '-'}</td>
           <td>${account.unlock3 ? `<span class="tag tag-unlock">${account.unlock3}</span>` : '-'}</td>
-          <td>${account.storageTime ? formatDate(account.storageTime) : '-'}</td>
           <td>${getStatusBadge(account)}</td>
           <td class="action-btns">
             <button class="btn-check" onclick="checkSingleAccount('${account.id}')" title="检测存活">🔍</button>
@@ -1219,7 +1444,9 @@
       document.getElementById('cookie').value = account.cookie || '';
       document.getElementById('userAgent').value = account.userAgent || '';
       document.getElementById('friends').value = account.friends || '';
+      document.getElementById('posts').value = account.posts || '';
       document.getElementById('homepage').value = account.homepage || '';
+      document.getElementById('avatar').value = account.avatar || '';
       document.getElementById('fbAccount').value = account.fbAccount || '';
       document.getElementById('dating').value = account.dating || '';
       document.getElementById('unlock1').value = account.unlock1 || '';
@@ -1227,6 +1454,7 @@
       document.getElementById('unlock3').value = account.unlock3 || '';
       document.getElementById('storageTime').value = account.storageTime ? account.storageTime.slice(0, 16) : '';
       document.getElementById('twoFactor').value = account.twoFactor || '';
+      document.getElementById('converter').value = account.converter || '';
       document.getElementById('notes').value = account.notes || '';
       
       document.getElementById('accountModal').classList.add('show');
@@ -1266,7 +1494,9 @@
         cookie: document.getElementById('cookie').value,
         userAgent: document.getElementById('userAgent').value,
         friends: parseInt(document.getElementById('friends').value) || 0,
+        posts: parseInt(document.getElementById('posts').value) || 0,
         homepage: document.getElementById('homepage').value,
+        avatar: document.getElementById('avatar').value,
         fbAccount: document.getElementById('fbAccount').value,
         dating: document.getElementById('dating').value,
         unlock1: document.getElementById('unlock1').value,
@@ -1274,6 +1504,7 @@
         unlock3: document.getElementById('unlock3').value,
         storageTime: document.getElementById('storageTime').value || new Date().toISOString(),
         twoFactor: document.getElementById('twoFactor').value,
+        converter: document.getElementById('converter').value,
         notes: document.getElementById('notes').value,
         checkStatus: editId ? (findAccountById(editId)?.checkStatus || '') : '',
         createTime: editId ? (findAccountById(editId)?.createTime || new Date().toISOString()) : new Date().toISOString()
@@ -1571,19 +1802,81 @@
     }
     
     // ==================== 筛选 ====================
+    function getSelectedCountries() {
+      const checkboxes = document.querySelectorAll('#filterCountryDropdown input[type="checkbox"]:checked');
+      return Array.from(checkboxes).map(cb => cb.value);
+    }
+    
+    function getFriendsFilterRanges() {
+      const ranges = [];
+      
+      // 获取手动输入的区间
+      const min = document.getElementById('friendsMin').value;
+      const max = document.getElementById('friendsMax').value;
+      
+      if (min !== '' || max !== '') {
+        ranges.push({
+          min: min === '' ? 0 : parseInt(min),
+          max: max === '' ? Infinity : parseInt(max)
+        });
+      }
+      
+      // 获取预设选项
+      const presets = document.querySelectorAll('.friends-preset:checked');
+      presets.forEach(preset => {
+        const value = preset.value;
+        if (value === '0') {
+          ranges.push({ min: 0, max: 0 });
+        } else if (value === '5000+') {
+          ranges.push({ min: 5000, max: Infinity });
+        } else {
+          const [pMin, pMax] = value.split('-').map(Number);
+          ranges.push({ min: pMin, max: pMax });
+        }
+      });
+      
+      return ranges;
+    }
+    
+    function matchesFriendsFilter(friendsCount, ranges) {
+      if (ranges.length === 0) return true;
+      const count = parseInt(friendsCount) || 0;
+      return ranges.some(range => count >= range.min && count <= range.max);
+    }
+    
+    function toggleCountryDropdown() {
+      const dropdown = document.getElementById('filterCountryDropdown');
+      dropdown.classList.toggle('show');
+    }
+    
+    function updateCountryFilter() {
+      const selected = getSelectedCountries();
+      const text = selected.length > 0 ? `已选 ${selected.length} 个国家` : '选择国家...';
+      document.getElementById('filterCountryText').textContent = text;
+    }
+    
+    function toggleFriendsFilter() {
+      const dropdown = document.getElementById('filterFriendsDropdown');
+      dropdown.classList.toggle('show');
+    }
+    
     function applyFilter() {
       const platform = document.getElementById('filterPlatform').value.toLowerCase();
       const username = document.getElementById('filterUsername').value.toLowerCase();
-      const country = document.getElementById('filterCountry').value.toLowerCase();
+      const selectedCountries = getSelectedCountries();
       const email = document.getElementById('filterEmail').value.toLowerCase();
       const status = document.getElementById('filterStatus').value.toLowerCase();
+      const friendsRanges = getFriendsFilterRanges();
       
       filteredAccounts = inventories[currentInventory].filter(a => {
-        return (!platform || (a.platform || '').toLowerCase().includes(platform)) &&
-               (!username || (a.username || '').toLowerCase().includes(username)) &&
-               (!country || (a.country || '').toLowerCase().includes(country)) &&
-               (!email || (a.email || '').toLowerCase().includes(email)) &&
-               (!status || (a.checkStatus || '').toLowerCase().includes(status));
+        const matchPlatform = !platform || (a.platform || '').toLowerCase().includes(platform);
+        const matchUsername = !username || (a.username || '').toLowerCase().includes(username);
+        const matchCountry = selectedCountries.length === 0 || selectedCountries.includes(a.country);
+        const matchEmail = !email || (a.email || '').toLowerCase().includes(email);
+        const matchStatus = !status || (a.checkStatus || '').toLowerCase().includes(status);
+        const matchFriends = matchesFriendsFilter(a.friends, friendsRanges);
+        
+        return matchPlatform && matchUsername && matchCountry && matchEmail && matchStatus && matchFriends;
       });
       renderTable(filteredAccounts);
     }
@@ -1591,9 +1884,19 @@
     function clearFilter() {
       document.getElementById('filterPlatform').value = '';
       document.getElementById('filterUsername').value = '';
-      document.getElementById('filterCountry').value = '';
       document.getElementById('filterEmail').value = '';
       document.getElementById('filterStatus').value = '';
+      document.getElementById('friendsMin').value = '';
+      document.getElementById('friendsMax').value = '';
+      
+      // 清除国家选择
+      document.querySelectorAll('#filterCountryDropdown input[type="checkbox"]').forEach(cb => cb.checked = false);
+      document.getElementById('filterCountryText').textContent = '选择国家...';
+      
+      // 清除好友数预设
+      document.querySelectorAll('.friends-preset').forEach(cb => cb.checked = false);
+      document.getElementById('filterFriendsText').textContent = '筛选好友数...';
+      
       filteredAccounts = inventories[currentInventory];
       renderTable();
     }
@@ -1646,6 +1949,7 @@
       document.getElementById('checkAccountList').value = accountsToCheck.map(a => a.username).join('\n');
       document.getElementById('checkAccountCount').textContent = accountsToCheck.length;
       document.getElementById('deadAccountList').value = '';
+      document.getElementById('liveAccountList').value = '';
       
       document.getElementById('checkModal').classList.add('show');
     }
@@ -1660,32 +1964,42 @@
       window.open(checkUrl, '_blank');
     }
     
-    function processDeadAccounts() {
+    function processCheckResults() {
       const deadText = document.getElementById('deadAccountList').value.trim();
-      const autoMove = document.getElementById('autoMoveDead2fa').checked;
+      const liveText = document.getElementById('liveAccountList').value.trim();
       
-      if (!deadText) {
-        showToast('请输入死亡账号列表', 'error');
+      if (!deadText && !liveText) {
+        showToast('请至少输入死亡账号或存活账号列表', 'error');
         return;
       }
 
+      // 解析死亡账号列表
       const deadUsernames = new Set(
         deadText.split('\n')
           .map(line => line.trim().toLowerCase())
           .filter(line => line.length > 0)
       );
 
-      if (deadUsernames.size === 0) {
-        showToast('未找到有效的死亡账号', 'error');
+      // 解析存活账号列表
+      const liveUsernames = new Set(
+        liveText.split('\n')
+          .map(line => line.trim().toLowerCase())
+          .filter(line => line.length > 0)
+      );
+
+      if (deadUsernames.size === 0 && liveUsernames.size === 0) {
+        showToast('未找到有效的账号', 'error');
         return;
       }
 
-      let movedCount = 0;
-      let markedCount = 0;
+      let movedToDeadCount = 0;
+      let keptAliveCount = 0;
       let notFoundCount = 0;
       
-      const toMove = [];
+      const toMoveToDead = [];
+      const accountsToKeepAlive = [];
 
+      // 处理死亡账号 - 迁移到死号库
       deadUsernames.forEach(username => {
         let found = false;
         
@@ -1698,12 +2012,16 @@
             found = true;
             const account = inventories[inv][accountIndex];
             
+            // 更新检测状态
             account.checkStatus = 'dead';
             account.lastCheckTime = new Date().toISOString();
-            markedCount++;
             
-            if (autoMove && inv !== 'dead') {
-              toMove.push({ account, from: inv, index: accountIndex });
+            // 如果不是已经在死号库，则迁移
+            if (inv !== 'dead') {
+              toMoveToDead.push({ account, from: inv, index: accountIndex });
+            } else {
+              // 已在死号库，只更新状态
+              movedToDeadCount++;
             }
             break;
           }
@@ -1712,11 +2030,38 @@
         if (!found) notFoundCount++;
       });
 
-      // 执行迁移
-      toMove.forEach(({ account, from, index }) => {
+      // 处理存活账号 - 保持在原库，更新状态
+      liveUsernames.forEach(username => {
+        let found = false;
+        
+        for (let inv of ['active', 'dead', 'sold']) {
+          const accountIndex = inventories[inv].findIndex(a => 
+            a.username.toLowerCase() === username
+          );
+          
+          if (accountIndex !== -1) {
+            found = true;
+            const account = inventories[inv][accountIndex];
+            
+            // 更新检测状态为存活
+            account.checkStatus = 'alive';
+            account.lastCheckTime = new Date().toISOString();
+            
+            // 保持在原库不变
+            keptAliveCount++;
+            accountsToKeepAlive.push({ username, inventory: inv });
+            break;
+          }
+        }
+        
+        if (!found) notFoundCount++;
+      });
+
+      // 执行迁移死亡账号到死号库
+      toMoveToDead.forEach(({ account, from, index }) => {
         inventories[from].splice(index, 1);
         inventories.dead.push(account);
-        movedCount++;
+        movedToDeadCount++;
       });
 
       saveData();
@@ -1726,7 +2071,24 @@
       clearSelection();
       closeModal('checkModal');
 
-      showToast(`处理完成！标记: ${markedCount}, 迁移: ${movedCount}, 未找到: ${notFoundCount}`);
+      // 显示处理结果
+      let resultMessage = '检测结果处理完成！\n';
+      if (movedToDeadCount > 0) {
+        resultMessage += `🔴 迁移到死号库: ${movedToDeadCount} 个\n`;
+      }
+      if (keptAliveCount > 0) {
+        resultMessage += `🟢 保持原库不变: ${keptAliveCount} 个\n`;
+      }
+      if (notFoundCount > 0) {
+        resultMessage += `❓ 未找到: ${notFoundCount} 个`;
+      }
+      
+      showToast(resultMessage, 'success', 5000);
+    }
+    
+    // 保留旧函数名用于兼容（已废弃）
+    function processDeadAccounts() {
+      processCheckResults();
     }
     
     function checkSingleAccount(id) {
@@ -1739,6 +2101,7 @@
       document.getElementById('checkAccountList').value = account.username;
       document.getElementById('checkAccountCount').textContent = 1;
       document.getElementById('deadAccountList').value = '';
+      document.getElementById('liveAccountList').value = '';
       document.getElementById('checkModal').classList.add('show');
     }
     
@@ -1879,15 +2242,15 @@
       const previewData = data.slice(0, 5);
       
       if (previewData.length > 0) {
-        const headers = ['平台', '账号', '邮箱', '国家'];
+        const headers = ['邮箱', '账号', '国家', '好友数'];
         table.querySelector('thead tr').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
         
         table.querySelector('tbody').innerHTML = previewData.map(row => `
           <tr>
-            <td>${escapeHtml(row.platform) || '-'}</td>
-            <td>${escapeHtml(row.username)}</td>
             <td>${escapeHtml(row.email) || '-'}</td>
+            <td>${escapeHtml(row.username)}</td>
             <td>${escapeHtml(row.country) || '-'}</td>
+            <td>${row.friends || 0}</td>
           </tr>
         `).join('');
         
@@ -1972,17 +2335,28 @@
         return;
       }
       
-      // 修复：只导出指定字段，不重复
+      // 使用新的字段列表导出
       const data = accounts.map(a => ({
         '邮箱': a.email || '',
-        '密码': a.password || '',
-        '双重验证': a.twoFactor || '',
+        '登录密码': a.password || '',
+        '双重验证码': a.twoFactor || '',
         '国家': a.country || '',
-        'CK': a.cookie || '',
-        '邮箱密码': a.emailPassword || '',
+        'cookie': a.cookie || '',
+        '邮箱POP登录密码': a.emailPassword || '',
         'UA': a.userAgent || '',
-        '好友': a.friends || 0,
-        '账号': a.username || ''
+        '好友数': a.friends || 0,
+        '账号': a.username || '',
+        '头像': a.avatar || '',
+        '帖子': a.posts || '',
+        '友缘': a.dating || '',
+        '主页': a.homepage || '',
+        '备注': a.notes || '',
+        '转换人': a.converter || '',
+        '入库日期': a.storageTime ? formatDate(a.storageTime) : '',
+        '原始ck': a.originalCookie || '',
+        '1解': a.unlock1 || '',
+        '2解': a.unlock2 || '',
+        '3解': a.unlock3 || ''
       }));
       
       const ws = XLSX.utils.json_to_sheet(data);
@@ -2022,25 +2396,26 @@
     
     function getExampleValue(field) {
       const examples = {
-        '平台': 'Facebook',
-        '账号': 'example_user',
-        '密码': 'password123',
         '邮箱': 'user@email.com',
-        '邮箱密码': 'email_pass123',
+        '登录密码': 'password123',
+        '双重验证码': '123456789',
         '国家': '美国',
-        '原CK': 'original_cookie_data',
-        'CK': 'current_cookie_data',
-        'UA': 'Mozilla/5.0...',
-        '好友': 500,
-        '主页': 'https://facebook.com/user',
-        'FB个号': 'fb_personal_account',
+        'cookie': 'session=abc123; user=xyz',
+        '邮箱POP登录密码': 'pop_pass123',
+        'UA': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        '好友数': 500,
+        '账号': 'example_user',
+        '头像': 'https://example.com/avatar.jpg',
+        '帖子': 128,
         '友缘': '已开通',
+        '主页': 'https://facebook.com/user',
+        '备注': '备用账号，重要',
+        '转换人': '张三',
+        '入库日期': '2024-01-15 10:30',
+        '原始ck': 'original_cookie_data_here',
         '1解': '已通过',
         '2解': '未通过',
-        '3解': '不需要',
-        '入库时间': '2024-01-15 10:30',
-        '双重验证': '123456789',
-        '备注': '备用账号'
+        '3解': '不需要'
       };
       return examples[field] || '';
     }
